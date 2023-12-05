@@ -1,0 +1,181 @@
+# Load required libraries
+library(shiny)
+library(shinyjs)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(lubridate)
+library(PROF)
+
+# download data
+
+# download HHS hospitalizations file
+# result <<- hhs_hosp_state_down(down_dir="~/Downloads")
+
+# locations
+loc_abbv <<- loc_pops$abbreviation
+loc_name <<- loc_pops$location_name
+
+# for now we remove the US and VI
+ind = which(loc_abbv %in% c('US', 'VI'))
+
+loc_abbv <<- loc_abbv[-ind]
+loc_name<<- loc_name[-ind]
+
+year_data <<- c(2021, 2022, 2023)
+nyear<<- length(year_data)
+
+# Define default end dates for fitting
+# https://www.datanovia.com/en/blog/ggplot-colors-best-tricks-you-will-love/
+end_fit_date_min <<- c(as.Date(paste0(year_data,'-10-01')))
+end_fit_date_max <<- c(as.Date(paste0(year_data+1,'-06-01')))
+end_fit_date_max[nyear] <<- Sys.Date()
+
+# Define colors for plots
+mycolor_list <<- list('covid19' = "#0072B2", 'influenza'= "#FC4E07",
+                      'combined' = "#CC79A7") #= "#D55E00",
+
+# Define UI
+ui <- fluidPage(
+  useShinyjs(),  # Initialize shinyjs
+  titlePanel("PROF Shiny App"),
+  tabsetPanel(
+    tabPanel("Exploring Incidence Data",
+             br(),
+             fluidRow(
+               br(),
+               column(6, selectInput("location", "Select Location:", choices = loc_abbv, selected = 'CA')),
+               column(6,selectInput("season", "Select Season:", choices = year_data, selected = 2023)),
+               column(6,actionButton("loadDataButton", "Download Incidence Data")),
+               br(),
+               br(),
+               htmlOutput("loading_message_1"),
+               br(),
+               br(),
+               br(),
+               column(12,plotlyOutput("plot1")),
+               column(12,plotlyOutput("plot2"))
+             )
+    ),
+    tabPanel("Fitting Mechanistic",
+             fluidRow(
+               br(),
+               column(12,checkboxGroupInput("selected_pathogens_models", "Select Pathogens and Models", choices = c("COVID-19  SEIRH" = 'A', "INFLUENZA  SIRH" = 'B',
+                                                                                                                    "COVID-19  SIRH" = 'C', 'INFLUENZA  SEIRH' = 'D'))),
+               # column(6, selectInput("disease", "Select Pathogens:", choices = c('COVID19' = 'covid19',
+               #                                                                   'INFLUENZA'= 'influenza','COVID19 & INFLUENZA' = 'both'), selected = 'both')),
+               # column(6, selectInput("model", "Select Model:", choices = c('SIRH' = 'sirh','SEIRH' = 'seirh','SEIRH/SIRH' = 'seirh/sirh',
+               #                                                             'SEIRH/SEIRH' = 'seirh/seirh', 'SIRH/SIRH' = 'sirh/sirh'), selected = 'seirh/sirh' )),
+               br(),
+               br(),
+               column(12, dateInput("select_end_fit", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[1],
+                                      value = end_fit_date_max[1],format = "yyyy-mm-dd")),
+               br(),
+               br(),
+               column(6,actionButton("fitDataButton", "Mechanistic Fit to Incidence")),
+               br(),
+               br(),
+               htmlOutput("loading_message_2"),
+               br(),
+               br(),
+               br(),
+               br(),
+               br(),
+               br(),
+               plotlyOutput("plot3")
+             )
+    ),
+    tabPanel("Fitting Statistical",
+             fluidRow(
+               br(),
+               column(6, checkboxGroupInput("diseaseStat", "Select Pathogens", choices = c("COVID-19"='covid19', "INFLUENZA" = 'influenza'))),
+               # column(6, selectInput("diseaseStat", "Select Pathogens:", choices = c('COVID19' = 'covid19',
+               #                                                                   'INFLUENZA'= 'influenza',
+               #                                                                   'COVID19 & INFLUENZA' = 'both'),
+                                     # selected = 'both')),
+              # br(),
+               column(6, dateInput("select_end_fit_stat", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[1],
+                                    value = end_fit_date_max[1],format = "yyyy-mm-dd")),
+               br(),
+               br(),
+               column(8,actionButton("fitStatButton", "Statistical Fit to Incidence")),
+               br(),
+               br(),
+               htmlOutput("loading_message_3"),
+               br(),
+               br(),
+               br(),
+               br(),
+               br(),
+               br(),
+               plotlyOutput("plot4")
+             )
+    ),
+    tabPanel("Forecasting Mechanistic",
+             fluidRow(
+               br(),
+               column(6,sliderInput("days_frcst", "Select Number of Days For Forecast:",
+                                    min = 7, max = 42, value = c(35))),
+               HTML("<p>  The Posterior Distribution Will be Used for the Forecast"),
+               br(),
+               column(6,actionButton("forecastButton", "Mechanistic Forecast")),
+               br(),
+               br(),
+               htmlOutput("loading_message_4"),
+               br(),
+               br(),
+               br(),
+               br(),
+               br(),
+               br(),
+               plotlyOutput("plot5")
+             )
+    ),
+    tabPanel("Forecasting Statistical",
+             fluidRow(
+               br(),
+               column(6, checkboxGroupInput("diseaseStatFrcst", "Select Pathogens", choices = c("COVID-19"='covid19', "INFLUENZA" = 'influenza'))),
+               # column(6, selectInput("diseaseStatFrcst", "Select Pathogens:", choices = c('COVID19' = 'covid19',
+               #                                                                       'INFLUENZA'= 'influenza',
+               #                                                                       'COVID19 & INFLUENZA' = 'both'),
+               #                       selected = 'both')),
+               br(),
+               column(6,sliderInput("days_frcst_stat", "Select Number of Days For Forecast:",
+                           min = 7, max = 42, value = c(35))),
+               br(),
+               column(12,HTML("<p>  A Baseline Statistical Model Will be Used for the Forecast")),
+               br(),
+               column(6,actionButton("forecastStatButton", "Statistical Forecast")),
+               br(),
+               br(),
+               htmlOutput("loading_message_5"),
+               br(),
+               br(),
+               br(),
+               br(),
+               br(),
+               br(),
+               plotlyOutput("plot6")
+             )
+    ),
+    tabPanel("About",
+             mainPanel(h2("PROF"),
+                       p("PROF is an R package (with Fortran code) for fitting and forecasting infectious disease incidence.
+                         The package ingests publicly-available confirmed hospital admission data, fits mechanistic and statistical
+                         models to the data, and provides short-term probabilistic forecasts. Currently, the package supports fitting
+                         and forecasting the individual and combined burden of influenza and COVID-19 at the state level.
+                         S[I]2HR and SE[I]2HR models are used to fit the two pathogens and both models use a flexible,
+                         time-dependent transmission term. A baseline statistical model is also offered for each pathogen.
+                         Once the User selects a state, and either one or both viruses,
+                         the PROF fitting procedure iteratively determines the joint posterior distribution of model parameters.
+                         The joint posterior distribution is then used with the model to generate location-specific probabilistic
+                         forecasts of the near-term number of hospital admissions. If both viruses are chosen, this procedure is done
+                         twice and the total hospital burden forecast is estimated by combining the trajectory profiles of each disease
+                         in multiple ways, including random, ordered, and semi-ordered. If the statistical model is also chosen, each
+                         pathogen is independently fitted with the model and the combinded burden is estimated."),
+                       p("For more on PROF see ",tags$a(href="https://predsci.github.io/PROF/",'our web documentation'))))
+
+  )
+)
+
+
