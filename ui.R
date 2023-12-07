@@ -102,16 +102,28 @@ ui <- fluidPage(
     tabPanel("Fitting Mechanistic",
              fluidRow(
                br(),
-               column(12,checkboxGroupInput("selected_pathogens_models", "Select Pathogens and Models", choices = c("COVID-19  SEIRH" = 'A', "INFLUENZA  SIRH" = 'B',
-                                                                                                                    "COVID-19  SIRH" = 'C', 'INFLUENZA  SEIRH' = 'D'))),
+               # column(12,checkboxGroupInput("selected_pathogens_models", "Select Pathogens and Models", choices = c("COVID-19  SEIRH" = 'A', "INFLUENZA  SIRH" = 'B',
+               #                                                                                                      "COVID-19  SIRH" = 'C', 'INFLUENZA  SEIRH' = 'D'))),
                # column(6, selectInput("disease", "Select Pathogens:", choices = c('COVID19' = 'covid19',
                #                                                                   'INFLUENZA'= 'influenza','COVID19 & INFLUENZA' = 'both'), selected = 'both')),
                # column(6, selectInput("model", "Select Model:", choices = c('SIRH' = 'sirh','SEIRH' = 'seirh','SEIRH/SIRH' = 'seirh/sirh',
                #                                                             'SEIRH/SEIRH' = 'seirh/seirh', 'SIRH/SIRH' = 'sirh/sirh'), selected = 'seirh/sirh' )),
+               # column(12,checkboxGroupInput("disease","Select Pathogens", choices = c("COVID19"='covid19', 'INFLUENZA'='influenza'))),
+               column(12,checkboxGroupInput("disease", "Select Pathogens", choices = c("COVID19"='covid19', "INFLUENZA"='influenza'))),
+               column(6,conditionalPanel(
+                 condition = "input.disease.indexOf('covid19') !== -1",
+                 checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19", choices = c("SEIRH"='seirh', "SIRH"='sirh'))
+               )),
+               column(6,conditionalPanel(
+                 condition = "input.disease.indexOf('influenza') !== -1",
+                 checkboxGroupInput("options_flu", "Select Compartmetal Model for Influenza", choices = c("SIRH"='sirh', "SEIRH"='seirh'))
+               )),
+               br(),
                br(),
                br(),
                column(12, dateInput("select_end_fit", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[1],
                                       value = end_fit_date_max[1],format = "yyyy-mm-dd")),
+               br(),
                br(),
                br(),
                column(6,actionButton("fitDataButton", "Mechanistic Fit to Incidence")),

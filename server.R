@@ -96,61 +96,19 @@ server <- function(input, output, session) {
 
     shinyjs::html("loading_message_2","<strong>Fitting Incidence Data..Please Wait.<br>This Will Take 10-15 Minutes</strong>")
 
-    if (length(input$selected_pathogens_models) > 1) {
+    diseases <- input$disease
 
-    if ("A" %in% input$selected_pathogens_models & "B" %in% input$selected_pathogens_models) {
-      diseases = c('covid19', 'influenza')
-      models   = c('seirh', 'sirh')
-    } else if ("C" %in% input$selected_pathogens_models & "D" %in% input$selected_pathogens_models) {
-      diseases = c('covid19', 'influenza')
-      models   = c('sirh', 'seirh')
-    } else if ("A" %in% input$selected_pathogens_models & "C" %in% input$selected_pathogens_models) {
-      diseases = c('covid19', 'influenza')
-      models   = c('seirh', 'seirh')
-    } else if ("B" %in% input$selected_pathogens_models & "D" %in% input$selected_pathogens_models) {
-      diseases = c('covid19', 'influenza')
-      models   = c('sirh', 'sirh')
-    } else {
-      diseases = c('covid19', 'influenza')
-      models   = c('seirh', 'sirh')
-      print("Unreanable Selection Fitting COVID19/INFLUENZA with SEIRH/SIRH Models")
+    options_cov <- input$options_cov
+    options_flu <- input$options_flu
+
+    models = NULL
+    if (!is.null(options_cov)) {
+      models = c(models,options_cov)
     }
 
-  } else {
-    if (input$selected_pathogens_models == 'A') {
-      diseases = c('covid19')
-      models  = c('seirh')
-    } else if (input$selected_pathogens_models == 'B') {
-      diseases = c('influenza')
-      models  = c('sirh')
-    } else if (input$selected_pathogens_models == 'C') {
-      diseases = c('covid19')
-      models  = c('sirh')
-    } else {
-      diseases = c('influenza')
-      models  = c('seirh')
+    if (!is.null(options_flu)) {
+      models = c(models,options_flu)
     }
-  }
-    # if (input$disease == 'covid19') {
-    #   diseases=c("covid19")
-    # } else if (input$disease == 'influenza') {
-    #   diseases=c("influenza")
-    # } else {
-    #   diseases=c("covid19", "influenza")
-    # }
-    #
-    # if(input$model == 'sirh') {
-    #   models = c('sirh')
-    # } else if (input$model == 'seirh') {
-    #   models = c('seirh')
-    # } else if (input$model == 'seirh/sirh') {
-    #   models = c('seirh', 'sirh')
-    # } else if (input$model == 'seirh/seirh') {
-    #   models = c('seirh', 'seirh')
-    # } else {
-    #   models = c('sirh', 'sirh')
-    # }
-
 
     par_list = init_par_list(diseases=diseases,models=models)
 
