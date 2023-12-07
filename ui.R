@@ -54,7 +54,49 @@ ui <- fluidPage(
                br(),
                br(),
                column(12,plotlyOutput("plot1")),
-               column(12,plotlyOutput("plot2"))
+               tags$head(
+                 tags$style(
+                   HTML("
+            #plot1 {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #plot1.fading {
+              opacity: 0.2;
+            }
+          ")
+                 )
+               ),tags$script(
+                 HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#plot1').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#plot1').removeClass('fading');
+          });
+        ")
+               ),
+               column(12,plotlyOutput("plot2")),
+               tags$head(
+                 tags$style(
+                   HTML("
+            #plot2 {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #plot2.fading {
+              opacity: 0.2;
+            }
+          ")
+                 )
+               ),tags$script(
+                 HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#plot2').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#plot2').removeClass('fading');
+          });
+        ")
+               )
              )
     ),
     tabPanel("Fitting Mechanistic",
@@ -82,7 +124,29 @@ ui <- fluidPage(
                br(),
                br(),
                br(),
-               plotlyOutput("plot3")
+               plotlyOutput("plot3"),
+               tags$head(
+                 tags$style(
+                   HTML("
+            #plot3 {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #plot3.fading {
+              opacity: 0.2;
+            }
+          ")
+                 )
+               ),
+               tags$script(
+                 HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#plot3').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#plot3').removeClass('fading');
+          });
+        ")
+               )
              )
     ),
     tabPanel("Fitting Statistical",
@@ -108,7 +172,29 @@ ui <- fluidPage(
                br(),
                br(),
                br(),
-               plotlyOutput("plot4")
+               plotlyOutput("plot4"),
+              tags$head(
+                tags$style(
+                  HTML("
+            #plot4 {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #plot4.fading {
+              opacity: 0.2;
+            }
+          ")
+                )
+              ),
+              tags$script(
+                HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#plot4').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#plot4').removeClass('fading');
+          });
+        ")
+              )
              )
     ),
     tabPanel("Forecasting Mechanistic",
@@ -128,7 +214,29 @@ ui <- fluidPage(
                br(),
                br(),
                br(),
-               plotlyOutput("plot5")
+               plotlyOutput("plot5"),
+               tags$head(
+                 tags$style(
+                   HTML("
+            #plot5 {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #plot5.fading {
+              opacity: 0.2;
+            }
+          ")
+                 )
+               ),
+               tags$script(
+                 HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#plot5').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#plot5').removeClass('fading');
+          });
+        ")
+               )
              )
     ),
     tabPanel("Forecasting Statistical",
@@ -155,7 +263,29 @@ ui <- fluidPage(
                br(),
                br(),
                br(),
-               plotlyOutput("plot6")
+               plotlyOutput("plot6"),
+               tags$head(
+                 tags$style(
+                   HTML("
+            #plot6 {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #plot6.fading {
+              opacity: 0.2;
+            }
+          ")
+                 )
+               ),
+               tags$script(
+                 HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#plot6').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#plot6').removeClass('fading');
+          });
+        ")
+               )
              )
     ),
     tabPanel("About",
