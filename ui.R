@@ -5,6 +5,7 @@ library(dplyr)
 library(ggplot2)
 library(plotly)
 library(lubridate)
+library(deSolve)
 library(PROF)
 
 # download data
@@ -112,12 +113,15 @@ ui <- fluidPage(
                column(12,checkboxGroupInput("disease", "Select Pathogens", choices = c("COVID19"='covid19', "INFLUENZA"='influenza'))),
                column(6,conditionalPanel(
                  condition = "input.disease.indexOf('covid19') !== -1",
-                 checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19", choices = c("SEIRH"='seirh', "SIRH"='sirh'))
+                 checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19", choices = c("SEIRH"='seirh', "SIRH"='sirh')),
+                 checkboxGroupInput("nb_cov", "Select Number of Values for FOI", choices = c(3,2))
                )),
                column(6,conditionalPanel(
                  condition = "input.disease.indexOf('influenza') !== -1",
-                 checkboxGroupInput("options_flu", "Select Compartmetal Model for Influenza", choices = c("SIRH"='sirh', "SEIRH"='seirh'))
+                 checkboxGroupInput("options_flu", "Select Compartmetal Model for Influenza", choices = c("SIRH"='sirh', "SEIRH"='seirh')),
+                 checkboxGroupInput("nb_flu", "Select Number of Values for FOI", choices = c(2,3))
                )),
+               br(),
                br(),
                br(),
                br(),
@@ -126,10 +130,15 @@ ui <- fluidPage(
                br(),
                br(),
                br(),
+               br(),
                column(6,actionButton("fitDataButton", "Mechanistic Fit to Incidence")),
                br(),
                br(),
+               br(),
+               br(),
+               br()
                htmlOutput("loading_message_2"),
+               br(),
                br(),
                br(),
                br(),

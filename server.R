@@ -101,6 +101,9 @@ server <- function(input, output, session) {
     options_cov <- input$options_cov
     options_flu <- input$options_flu
 
+    nb_cov <- as.numeric(input$nb_cov)
+    nb_flu <- as.numeric(input$nb_flu)
+    
     models = NULL
     if (!is.null(options_cov)) {
       models = c(models,options_cov)
@@ -109,10 +112,20 @@ server <- function(input, output, session) {
     if (!is.null(options_flu)) {
       models = c(models,options_flu)
     }
-
+    
+    nb_vec = NULL
+    
+    if (!is.null(nb_cov)) {
+      nb_vec = c(nb_vec, nb_cov)
+    }
+    
+    if (!is.null(nb_flu)) {
+      nb_vec = c(nb_vec, nb_flu)
+    }
+    
     par_list = init_par_list(diseases=diseases,models=models)
 
-    fit_list <- fit_data(prof_data = prof_data, par_list = par_list)
+    fit_list <- fit_data(prof_data = prof_data, par_list = par_list, nb_vec = nb_vec)
 
     shared_fit$data = fit_list
 
