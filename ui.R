@@ -136,7 +136,7 @@ ui <- fluidPage(
                br(),
                br(),
                br(),
-               br()
+               br(),
                htmlOutput("loading_message_2"),
                br(),
                br(),
