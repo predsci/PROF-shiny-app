@@ -96,14 +96,24 @@ server <- function(input, output, session) {
 
     shinyjs::html("loading_message_2","<strong>Fitting Incidence Data..Please Wait.<br>This Will Take 10-15 Minutes</strong>")
 
-    diseases <- input$disease
-
     options_cov <- input$options_cov
     options_flu <- input$options_flu
 
+    # These are the pathogens that the user would like to fit
+
+    diseases = NULL
+    if (!is.null(options_cov)) {
+      diseases = c(diseases, 'covid19')
+    }
+
+    if (!is.null(options_flu)) {
+      diseases = c(diseases, 'influenza')
+    }
+
+
     nb_cov <- as.numeric(input$nb_cov)
     nb_flu <- as.numeric(input$nb_flu)
-    
+
     models = NULL
     if (!is.null(options_cov)) {
       models = c(models,options_cov)
@@ -112,20 +122,20 @@ server <- function(input, output, session) {
     if (!is.null(options_flu)) {
       models = c(models,options_flu)
     }
-    
+
     nb_vec = NULL
-    
+
     if (!is.null(nb_cov)) {
       nb_vec = c(nb_vec, nb_cov)
     }
-    
+
     if (!is.null(nb_flu)) {
       nb_vec = c(nb_vec, nb_flu)
     }
-    
+
     par_list = init_par_list(diseases=diseases,models=models)
 
-    fit_list <- fit_data(prof_data = prof_data, par_list = par_list, nb_vec = nb_vec)
+    fit_list <- fit_data(prof_data = prof_data[diseases], par_list = par_list, nb_vec = nb_vec)
 
     shared_fit$data = fit_list
 
@@ -133,7 +143,7 @@ server <- function(input, output, session) {
 
     pl_list <- reactive ({
       if (!is.null(fit_list))
-        shiny_plot_fit(prof_data = prof_data, par_list = par_list, fit_list = fit_list)
+        shiny_plot_fit(prof_data = prof_data[diseases], par_list = par_list, fit_list = fit_list)
     })
 
 
@@ -155,20 +165,13 @@ server <- function(input, output, session) {
 
     shinyjs::html("loading_message_3","<strong>Fitting Incidence Data..Please Wait.</strong>")
 
-    print(length(input$diseaseStat))
     if (length(input$diseaseStat) > 1) {
       diseases=c("covid19", "influenza")
     } else {
       if (input$diseaseStat == 'covid19') diseases=c("covid19")
       if (input$diseaseStat == 'influenza') diseases=c("influenza")
     }
-    # if (input$diseaseStat == 'covid19') {
-    #   diseases=c("covid19")
-    # } else if (input$diseaseStat == 'influenza') {
-    #   diseases=c("influenza")
-    # } else {
-    #   diseases=c("covid19", "influenza")
-    # }
+
 
     #updateSelectInput(session, "disease", choices = )
 
@@ -194,10 +197,26 @@ server <- function(input, output, session) {
 
     shinyjs::html("loading_message_4","<strong>Calculating Forecast..Please Wait.</strong>")
 
+    observe({
+      options_cov <- input$options_cov
+      options_flu <- input$options_flu
+    })
+
+
+    # These are the pathogens that the user chose to fit, forecast is limited to them
+
+    diseases = NULL
+    if (!is.null(options_cov)) {
+      diseases = c(diseases, 'covid19')
+    }
+
+    if (!is.null(options_flu)) {
+      diseases = c(diseases, 'influenza')
+    }
 
     pl_list <- reactive ({
       if (!is.null(prof_data))
-        shiny_plot_forecast(prof_data = prof_data, par_list, fit_list, ntraj =1000, nfrcst = input$days_frcst)
+        shiny_plot_forecast(prof_data = prof_data[diseases], par_list, fit_list, ntraj =1000, nfrcst = input$days_frcst)
     })
 
     output$plot5 <- renderPlotly({pl_list()})

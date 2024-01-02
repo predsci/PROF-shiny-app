@@ -409,8 +409,6 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
 
   } #end of loop over diseases
 
-
-
   interactive_plot <- list()
   for (ip in 1:npath) {
     disease = disease_list[ip]
@@ -762,6 +760,17 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   } #end of loop over diseases
 
+  interactive_plot <- list()
+
+  # if only a single pathogen was selected - create plot and return
+
+  if (npath == 1) {
+    interactive_plot[[1]] <- ggplotly(pl[[1]])
+    arrange_plot <- interactive_plot[[1]]
+    return(arrange_plot)
+  }
+
+  # If more than one pathogen
 
   # Combine forecasts
   cat("Combining Forecasts \n")
@@ -849,7 +858,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   }
 
-  interactive_plot <- list()
+
 
   for (ip in 1:length(pl)) {
     interactive_plot[[ip]] <- ggplotly(pl[[ip]])
