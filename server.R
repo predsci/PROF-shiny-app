@@ -197,11 +197,8 @@ server <- function(input, output, session) {
 
     shinyjs::html("loading_message_4","<strong>Calculating Forecast..Please Wait.</strong>")
 
-    observe({
-      options_cov <- input$options_cov
-      options_flu <- input$options_flu
-    })
-
+    options_cov <- input$options_cov
+    options_flu <- input$options_flu
 
     # These are the pathogens that the user chose to fit, forecast is limited to them
 
