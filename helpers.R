@@ -343,17 +343,13 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
 
     ntimes = length(times)
 
-    # observations - all data stream
-
-    obs = mydata$data$inc
+    # observations - fitted only
 
     obs_fit = mydata$data_fit_stat$inc
 
     cat('\nCreating ',toupper(disease),' Statistical Fit for ', reg_name,'\n\n')
 
     simdat = stat_fit(obs_fit, ntraj)
-
-    reported = obs
 
     reported_fit = obs_fit
 
@@ -363,7 +359,7 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
     quantiles <- as.data.frame(quantiles)
 
     total=cbind(date = as.Date(dates, format = '%Y-%m-%d'),time = 1:ntimes,quantiles,
-                reported = reported_fit)
+                reported_fit = reported_fit)
 
     total = as.data.frame(total)
 
@@ -391,7 +387,7 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
                                         geom_line(aes(y=`50%`),color=mycolor)+
                                         geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.3)+
                                         geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.5)+
-                                        geom_point(aes(y=reported),color='black', alpha = 1., size = 0.5)+
+                                        geom_point(aes(y=reported_fit),color='black', alpha = 1., size = 0.5)+
                                         geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", linewidth = 1.5) +
                                         labs(y=ylab,x=xlab)+
                                         theme(plot.title = element_text(hjust = 0.5, vjust = 0.8)) +
@@ -480,20 +476,17 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     # disease name (covid or flu)
     disease = mydata$disease
 
-    # hospitalization incidence - fitted
-    inc = mydata$data_fit$inc
-
     # Number of values for FOI
     nb = nb_vec[ip]
 
     # dates - fitted
-    dates  = mydata$data_fit$date
+    dates_fit  = mydata$data_fit$date
 
-    ndates = length(dates)
+    ndates = length(dates_fit)
 
     # using the date array build an integer day array
 
-    times = dates_to_int(dates)
+    times = dates_to_int(dates_fit)
 
     ntimes = length(times)
 
@@ -501,17 +494,17 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     # build also the arrays for the forecasts
 
-    cadence = as.numeric(dates[2]-dates[1])
+    cadence = as.numeric(dates_fit[2]-dates_fit[1])
     if (cadence == 1) {
       cadence_lab = paste0(cadence, ' day')
       print_lab = 'Days'
-      dates_frcst = seq(from = dates[1], length = ntimes_frcst, by = '1 day')
+      dates_frcst = seq(from = dates_fit[1], length = ntimes_frcst, by = '1 day')
     }
 
     if (cadence == 7) {
       cadence_lab = paste0(cadence, ' week')
       print_lab = 'Weeks'
-      dates_frcst = seq(from = dates[1], length = ntimes_frcst, by = '1 week')
+      dates_frcst = seq(from = dates_fit[1], length = ntimes_frcst, by = '1 week')
     }
 
 
@@ -544,6 +537,16 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     # observations - all data stream
 
     obs = mydata$data$inc
+
+    dates = mydata$data$date
+
+    # start date of obs may not be the same as start date of obs_fit
+
+    keep_ind = which(dates >= dates_fit[1])
+
+    # trim
+    obs = obs[keep_ind]
+    dates = dates[keep_ind]
 
     obs_fit = mydata$data_fit$inc
 
@@ -697,7 +700,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     npad = nfrcst - length(obs)
     if (npad > 0) {
-      reported = c(obs[1:length(dates_frcst)], rep(NA, npad))
+      reported = c(obs, rep(NA, npad))
     } else {
       reported = obs[1:length(dates_frcst)]
     }
@@ -705,7 +708,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     npad_fit = nfrcst - length(obs_fit)
 
     if (npad_fit > 0) {
-      reported_fit = c(obs_fit[1:length(dates_frcst)], rep(NA, npad_fit))
+      reported_fit = c(obs_fit, rep(NA, npad_fit))
     } else {
       reported_fit = obs_fit[1:length(dates_frcst)]
     }
@@ -767,7 +770,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       # geom_vline(xintercept = total$date[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
       labs(y=ylab,x=xlab) + #,title=mytitle)+
       theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-      annotate("text", x = median(total$date), y = max(total[,"97.5%"]), label = mytitle, size = 4)
+      annotate("text", x = median(total$date), y = 0.93 *max(total[,"97.5%"]), label = mytitle, size = 4)
 
   } #end of loop over diseases
 
@@ -796,18 +799,19 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   obs_fit_both = combined_frcst$obs_fit_both
 
-  npad = nfrcst - length(obs_both)
+  npad = length(dates_both) - length(obs_both)
   if (npad > 0) {
-    reported_both = c(obs_both[1:length(dates_frcst)], rep(NA, npad))
+    reported_both = c(obs_both, rep(NA, npad))
   } else {
-    reported_both = obs_both[1:length(dates_frcst)]
+    reported_both = reported_both[1:length(dates_both)]
   }
 
-  npad_fit = nfrcst - length(obs_fit_both)
+  npad_fit = length(dates_both) - length(obs_fit_both)
+
   if (npad_fit > 0) {
-    reported_fit_both = c(obs_fit_both[1:length(dates_frcst)], rep(NA, npad))
+    reported_fit_both = c(obs_fit_both, rep(NA, npad))
   } else {
-    reported_fit_both = obs_fit_both[1:length(dates_frcst)]
+    reported_fit_both = reported_fit_both[1:length(dates_both)]
   }
 
   combined_names <- c('random', 'sorted')
@@ -865,11 +869,9 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       coord_cartesian(ylim=c(0, both_max))+
       labs(y=ylab,x=xlab)+
       theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-      annotate("text", x = median(total_both$date), y = both_max, label = mytitle, size = 4)
+      annotate("text", x = median(total_both$date), y = 0.93 *both_max, label = mytitle, size = 4)
 
   }
-
-
 
   for (ip in 1:length(pl)) {
     interactive_plot[[ip]] <- ggplotly(pl[[ip]])
@@ -878,7 +880,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   cat("\nMaking Plots\n\n")
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
-                          nrows = 2, titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE)
+                          nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
   return(arrange_plot)
 
 }
@@ -887,6 +889,8 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
   ntraj = 1000
+
+  if (is.null(nfrcst)) nfrcst = 35
 
   npath = length(diseases)
 
@@ -909,13 +913,13 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     inc = mydata$data_fit_stat$inc
 
     # dates - fitted
-    dates  = mydata$data_fit_stat$date
+    dates_fit  = mydata$data_fit_stat$date
 
-    ndates = length(dates)
+    ndates = length(dates_fit)
 
     # using the date array build an integer day array
 
-    times = dates_to_int(dates)
+    times = dates_to_int(dates_fit)
 
     ntimes = length(times)
 
@@ -923,17 +927,17 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     # build also the arrays for the forecasts
 
-    cadence = as.numeric(dates[2]-dates[1])
+    cadence = as.numeric(dates_fit[2]-dates_fit[1])
     if (cadence == 1) {
       cadence_lab = paste0(cadence, ' day')
       print_lab = 'Days'
-      dates_frcst = seq(from = dates[1], length = ntimes_frcst, by = '1 day')
+      dates_frcst = seq(from = dates_fit[1], length = ntimes_frcst, by = '1 day')
     }
 
     if (cadence == 7) {
       cadence_lab = paste0(cadence, ' week')
       print_lab = 'Weeks'
-      dates_frcst = seq(from = dates[1], length = ntimes_frcst, by = '1 week')
+      dates_frcst = seq(from = dates_fit[1], length = ntimes_frcst, by = '1 week')
     }
 
 
@@ -942,6 +946,12 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     # observations - all data stream
 
     obs = mydata$data$inc
+
+    # obs may not have the sam start date as obs_fit hence need to trim
+    keep_ind = which(mydata$data$date >= dates_fit[1])
+
+    obs = obs[keep_ind]
+    dates = mydata$data$date[keep_ind]
 
     obs_fit = mydata$data_fit_stat$inc
 
@@ -953,7 +963,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     npad = nfrcst - length(obs)
     if (npad > 0) {
-      reported = c(obs[1:length(dates_frcst)], rep(NA, npad))
+      reported = c(obs, rep(NA, npad))
     } else {
       reported = obs[1:length(dates_frcst)]
     }
@@ -961,7 +971,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     npad_fit = nfrcst - length(obs_fit)
 
     if (npad_fit > 0) {
-      reported_fit = c(obs_fit[1:length(dates_frcst)], rep(NA, npad_fit))
+      reported_fit = c(obs_fit, rep(NA, npad_fit))
     } else {
       reported_fit = obs_fit[1:length(dates_frcst)]
     }
@@ -1017,7 +1027,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
                                         # geom_vline(xintercept = total$date[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
                                         labs(y=ylab,x=xlab) + #,title=mytitle)+
                                         theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-                                        annotate("text", x = median(total$date), y = max(total[,"97.5%"]), label = mytitle, size = 4)
+                                        annotate("text", x = median(total$date), y = 0.93*max(total[,"97.5%"]), label = mytitle, size = 4)
 
   } #end of loop over diseases
 
@@ -1045,16 +1055,16 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
   npad = nfrcst - length(obs_both)
   if (npad > 0) {
-    reported_both = c(obs_both[1:length(dates_frcst)], rep(NA, npad))
+    reported_both = c(obs_both, rep(NA, npad))
   } else {
-    reported_both = obs_both[1:length(dates_frcst)]
+    reported_both = obs_both[1:length(dates_both)]
   }
 
   npad_fit = nfrcst - length(obs_fit_both)
   if (npad_fit > 0) {
-    reported_fit_both = c(obs_fit_both[1:length(dates_frcst)], rep(NA, npad))
+    reported_fit_both = c(obs_fit_both, rep(NA, npad))
   } else {
-    reported_fit_both = obs_fit_both[1:length(dates_frcst)]
+    reported_fit_both = obs_fit_both[1:length(dates_both)]
   }
 
   combined_names <- c('random', 'sorted')
@@ -1111,7 +1121,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
                                                    coord_cartesian(ylim=c(0, both_max))+
                                                    labs(y=ylab,x=xlab)+
                                                     theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-                                                    annotate("text", x = median(total_both$date), y = both_max, label = mytitle, size = 4)
+                                                    annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4)
 
   }
 
@@ -1133,7 +1143,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
   cat("\nMaking Plots\n\n")
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
-                            nrows = 2, titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE)
+                            nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
   return(arrange_plot)
 
 }

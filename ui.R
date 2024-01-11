@@ -32,6 +32,12 @@ end_fit_date_min <<- c(as.Date(paste0(year_data,'-10-01')))
 end_fit_date_max <<- c(as.Date(paste0(year_data+1,'-06-01')))
 end_fit_date_max[nyear] <<- Sys.Date()
 
+cov_start_fit_date_min <<- c(as.Date('2021-10-15'), as.Date('2022-10-15'),as.Date('2023-06-01'))
+cov_start_fit_date_max <<- c(as.Date('2021-11-15'), as.Date('2022-11-15'),as.Date('2023-10-15'))
+
+flu_start_fit_date_min <<- c(as.Date('2021-09-01'), as.Date('2022-09-01'),as.Date('2023-09-01'))
+flu_start_fit_date_max <<- c(as.Date('2021-11-15'), as.Date('2022-11-15'),as.Date('2023-10-15'))
+
 # Define colors for plots
 mycolor_list <<- list('covid19' = "#0072B2", 'influenza'= "#FC4E07",
                       'combined' = "#CC79A7") #= "#D55E00",
@@ -103,41 +109,57 @@ ui <- fluidPage(
     tabPanel("Fitting Mechanistic",
              fluidRow(
                br(),
-               column(12,checkboxGroupInput("disease", "Select Pathogens", choices = c("COVID19"='covid19', "INFLUENZA"='influenza'))),
+               column(12,checkboxGroupInput("disease", "Select Pathogens:", choices = c("COVID19"='covid19', "INFLUENZA"='influenza'), inline = TRUE)),
                column(6,conditionalPanel(
                  condition = "input.disease.indexOf('covid19') !== -1",
-                 checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19", choices = c("SEIRH"='seirh', "SIRH"='sirh')),
-                 checkboxGroupInput("nb_cov", "Select Number of Values for FOI", choices = c(3,2))
+                 checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19",choices  = c("SEIRH"='seirh', "SIRH"='sirh'), inline = TRUE),
+                 checkboxGroupInput("nb_cov", "Select Number of Values for COVID19 FOI", choices = c(3,2), inline = TRUE),
+                 dateInput("cov_start_fit", "Select Start Date For Fitting COVID19:", min = cov_start_fit_date_min[nyear], max= cov_start_fit_date_max[nyear],
+                           value = cov_start_fit_date_min[nyear],format = "yyyy-mm-dd")
                )),
-               column(6,conditionalPanel(
+                column(6,conditionalPanel(
                  condition = "input.disease.indexOf('influenza') !== -1",
-                 checkboxGroupInput("options_flu", "Select Compartmetal Model for Influenza", choices = c("SIRH"='sirh', "SEIRH"='seirh')),
-                 checkboxGroupInput("nb_flu", "Select Number of Values for FOI", choices = c(2,3))
+                 checkboxGroupInput("options_flu", "Select Compartmetal Model for Influenza", choices = c("SIRH"='sirh', "SEIRH"='seirh'), inline=TRUE),
+                 checkboxGroupInput("nb_flu", "Select Number of Values for Influenza FOI", choices = c(2,3), inline = TRUE),
+                 dateInput("flu_start_fit", "Select Start Date For Fitting Influenza:", min = flu_start_fit_date_min[nyear], max= flu_start_fit_date_max[nyear],
+                           value = flu_start_fit_date_min[nyear],format = "yyyy-mm-dd")
                )),
                br(),
+               hr(style = "clear: both;"),
+               column(12,dateInput("select_end_fit", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[nyear],
+                                      value = end_fit_date_max[nyear],format = "yyyy-mm-dd")),
+               # Custom JavaScript to center the dateInput
+               tags$script(HTML("
+      $(document).ready(function() {
+        $('#select_end_fit').parent().css('display', 'flex');
+        $('#select_end_fit').parent().css('justify-content', 'center');
+      });
+    ")),
                br(),
                br(),
                br(),
-               column(12, dateInput("select_end_fit", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[1],
-                                      value = end_fit_date_max[1],format = "yyyy-mm-dd")),
+               br(),
+               column(12,actionButton("fitDataButton", "Mechanistic Fit to Incidence")),
+               # Custom JavaScript to center the dateInput
+               tags$script(HTML("
+      $(document).ready(function() {
+        $('#fitDataButton').parent().css('display', 'flex');
+        $('#fitDataButton').parent().css('justify-content', 'center');
+      });
+    ")),
                br(),
                br(),
-               br(),
-               br(),
-               column(6,actionButton("fitDataButton", "Mechanistic Fit to Incidence")),
-               br(),
-               br(),
-               br(),
-               br(),
-               br(),
+               # br(),
+               # br(),
+               # br(),
                htmlOutput("loading_message_2"),
                br(),
                br(),
-               br(),
-               br(),
-               br(),
-               br(),
-               br(),
+               # br(),
+               # br(),
+               # br(),
+               # br(),
+               # br(),
                plotlyOutput("plot3"),
                tags$head(
                  tags$style(
@@ -166,14 +188,27 @@ ui <- fluidPage(
     tabPanel("Fitting Statistical",
              fluidRow(
                br(),
-               column(6, checkboxGroupInput("diseaseStat", "Select Pathogens", choices = c("COVID-19"='covid19', "INFLUENZA" = 'influenza'))),
-               # column(6, selectInput("diseaseStat", "Select Pathogens:", choices = c('COVID19' = 'covid19',
-               #                                                                   'INFLUENZA'= 'influenza',
-               #                                                                   'COVID19 & INFLUENZA' = 'both'),
-                                     # selected = 'both')),
-              # br(),
-               column(6, dateInput("select_end_fit_stat", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[1],
+               column(12, checkboxGroupInput("diseaseStat", "Select Pathogens", choices = c("COVID-19"='covid19', "INFLUENZA" = 'influenza'), inline = TRUE)),
+               column(6,conditionalPanel(
+                 condition = "input.diseaseStat.indexOf('covid19') !== -1",
+                 dateInput("cov_start_fit_stat", "Select Start Date For Fitting COVID19:", min = cov_start_fit_date_min[nyear], max= cov_start_fit_date_max[nyear],
+                           value = cov_start_fit_date_min[nyear],format = "yyyy-mm-dd")
+               )),
+               column(6,conditionalPanel(
+                 condition = "input.diseaseStat.indexOf('influenza') !== -1",
+                 dateInput("flu_start_fit_stat", "Select Start Date For Fitting Influenza:", min = flu_start_fit_date_min[nyear], max= flu_start_fit_date_max[nyear],
+                           value = flu_start_fit_date_min[nyear],format = "yyyy-mm-dd")
+               )),
+               br(),
+               hr(style = "clear: both;"),
+               column(12, dateInput("select_end_fit_stat", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[1],
                                     value = end_fit_date_max[1],format = "yyyy-mm-dd")),
+               tags$script(HTML("
+                $(document).ready(function() {
+                $('#select_end_fit').parent().css('display', 'flex');
+                $('#select_end_fit').parent().css('justify-content', 'center');
+                });
+                ")),
                br(),
                br(),
                column(8,actionButton("fitStatButton", "Statistical Fit to Incidence")),
