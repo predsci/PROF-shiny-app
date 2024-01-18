@@ -136,25 +136,27 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
         #   icount = icount + 1
         #   simdat[icount,] <- model.pred$cases
 
-        yinit = c(state0$S0, state0$I0, 0, 0, 0)
+        yinit = c(state0$S0, state0$I0, 0, 0, 0, 0)
         parms = c(mypar, 'wl' = wl)
         time0 = parms['time0']
-        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'rk4', func=td_sirh_dynamics, parms = parms)
+        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_sirh_dynamics, parms = parms)
         results0 <- results0[,-1]
         yinit0 <- as.numeric(results0[nrow(results0),])
 
         if (nb == 2) {
-          results <- ode(y=yinit0, t = times, method='rk4', func=td2_sirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = times, method='lsoda', func=td2_sirh_dynamics, parms = parms)
         } else {
-          results <- ode(y=yinit0, t = times, method='rk4', func=td3_sirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = times, method='lsoda', func=td3_sirh_dynamics, parms = parms)
         }
 
         model.pred = results[,-1] # remove the time column
+        colnames(model.pred) = c('S', 'I', 'R', 'H1', 'H2', 'Ih')
 
         # generate simulation data with the parameters defined above
 
-        Ih = model.pred[,4]
+        Ih = c(0, diff(model.pred[,'Ih']))
         cases <- rpois(ntimes, Ih * mypar[['rho']] + mypar[['baseline']])
+
         icount = icount + 1
         simdat[icount,] <- cases
 
@@ -198,23 +200,25 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
         #
         # model.pred <- simulate(covid_seir, format="data.frame", nsim = 1)
 
-        yinit = c(state0$S0, state0$I0, state0$E0, 0, 0, 0)
+        yinit = c(state0$S0, state0$I0, state0$E0, 0, 0, 0, 0)
         parms = c(mypar, 'wl' = wl)
         time0 = parms['time0']
-        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'rk4', func=td_seirh_dynamics, parms = parms)
+        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_seirh_dynamics, parms = parms)
         results0 <- results0[,-1]
         yinit0 <- as.numeric(results0[nrow(results0),])
         if (nb == 2) {
-          results <- ode(y=yinit0, t = times, method='rk4', func=td2_seirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = times, method='lsoda', func=td2_seirh_dynamics, parms = parms)
         } else {
-          results <- ode(y=yinit0, t = times, method='rk4', func=td3_seirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = times, method='lsoda', func=td3_seirh_dynamics, parms = parms)
         }
 
         model.pred = results[,-1] # remove the time column
+        colnames(model.pred) = c('S', 'E', 'I', 'R', 'H1', 'H2', 'Ih')
 
         # generate simulation data with the parameters defined above
 
-        Ih = model.pred[,5]
+        Ih = c(0, diff(model.pred[,'Ih']))
+
         cases <- rpois(ntimes, Ih * mypar[['rho']] + mypar[['baseline']])
 
         if (max(cases) > mypar['baseline']){
@@ -599,24 +603,25 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
         # if (model.pred$cases[which.max(obs)] > round(mypar['baseline']) *2){
 
-        yinit = c(state0$S0, state0$I0, 0, 0, 0)
+        yinit = c(state0$S0, state0$I0, 0, 0, 0, 0)
         parms = c(mypar, 'wl' =wl)
         time0 = parms['time0']
-        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'rk4', func=td_sirh_dynamics, parms = parms)
+        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_sirh_dynamics, parms = parms)
         results0 <- results0[,-1]
         yinit0 <- as.numeric(results0[nrow(results0),])
         if (nb == 2) {
-          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='rk4', func=td2_sirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='lsoda', func=td2_sirh_dynamics, parms = parms)
         } else {
-          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='rk4', func=td3_sirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='lsoda', func=td3_sirh_dynamics, parms = parms)
           # calling H2 Ih here
         }
 
         model.pred = results[,-1] # remove the time column
+        colnames(model.pred) = c('S', 'I', 'R', 'H1', 'H2', 'Ih')
 
         # generate simulation data with the parameters defined above
 
-        Ih = model.pred[,4]
+        Ih = c(0, diff(model.pred[,'Ih']))
         cases <- rpois(ntimes_frcst, Ih * mypar[['rho']] + mypar[['baseline']])
 
         if (cases[which.max(obs)] > round(mypar['baseline'])) {
@@ -662,24 +667,26 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
         #
         # model.pred <- simulate(covid_seir, format="data.frame", nsim = 1)
 
-        yinit = c(state0$S0, state0$I0, state0$E0, 0, 0, 0)
+        yinit = c(state0$S0, state0$I0, state0$E0, 0, 0, 0, 0)
         parms = c(mypar, 'wl' =wl)
         time0 = parms['time0']
-        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'rk4', func=td_seirh_dynamics, parms = parms)
+        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_seirh_dynamics, parms = parms)
         results0 <- results0[,-1]
         yinit0 <- as.numeric(results0[nrow(results0),])
         if (nb == 2) {
-          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='rk4', func=td2_seirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='lsoda', func=td2_seirh_dynamics, parms = parms)
         } else {
-          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='rk4', func=td3_seirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='lsoda', func=td3_seirh_dynamics, parms = parms)
           # calling H2 Ih here
         }
 
         model.pred = results[,-1] # remove the time column
+        colnames(model.pred) = c('S', 'E', 'I', 'R', 'H1', 'H2', 'Ih')
 
         # generate simulation data with the parameters defined above
 
-        Ih = model.pred[,5]
+        Ih = c(0, diff(model.pred[,'Ih']))
+
         cases <- rpois(ntimes_frcst, Ih * mypar[['rho']] + mypar[['baseline']])
 
         if (max(cases) > mypar['baseline']){
