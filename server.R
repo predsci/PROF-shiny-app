@@ -133,26 +133,6 @@ server <- function(input, output, session) {
 
     shinyjs::html("loading_message_2","<strong>    Fitting Incidence Data..Please Wait. This Will Take 10-15 Minutes</strong>")
 
-
-    # models = NULL
-    # if (!is.null(options_cov)) {
-    #   models = c(models,options_cov)
-    # }
-    #
-    # if (!is.null(options_flu)) {
-    #   models = c(models,options_flu)
-    # }
-    #
-    # nb_vec = NULL
-    #
-    # if (!is.null(nb_cov)) {
-    #   nb_vec = c(nb_vec, nb_cov)
-    # }
-    #
-    # if (!is.null(nb_flu)) {
-    #   nb_vec = c(nb_vec, nb_flu)
-    # }
-
     par_list = init_par_list(diseases=diseases,models=models)
 
     fit_list <- fit_data(prof_data = prof_data[diseases], par_list = par_list, nb_vec = nb_vec)
@@ -227,21 +207,42 @@ server <- function(input, output, session) {
     fit_list <- shared_fit$data$fit_list
     par_list <- shared_par$data
 
+    disease <- input$disease
+
+    fit_start = NULL
+    if (length(disease) > 1) {
+      diseases=c("covid19", "influenza")
+      options_cov <- input$options_cov
+      options_flu <- input$options_flu
+      nb_cov <- as.numeric(input$nb_cov)
+      nb_flu <- as.numeric(input$nb_flu)
+    } else {
+      if (disease == 'covid19') {
+        diseases=c("covid19")
+        fit_start = list('covid19'=input$cov_start_fit, 'influenza'=NULL)
+        options_cov <- input$options_cov
+        options_flu <- NULL
+        nb_cov <- as.numeric(input$nb_cov)
+        nb_flu <- NULL
+      }
+      if (disease == 'influenza') {
+        diseases=c("influenza")
+        fit_start = list('covid19' = NULL, 'influenza'=input$flu_start_fit)
+        options_cov <- NULL
+        options_flu <- input$options_flu
+        nb_cov <- NULL
+        nb_flu <- as.numeric(input$nb_flu)
+
+      }
+
+    }
+
+    # models = c(options_cov, options_flu)
+    # nb_vec = c(nb_cov, nb_flu)
+
     shinyjs::html("loading_message_4","<strong>Calculating Forecast..Please Wait.</strong>")
 
-    options_cov <- input$options_cov
-    options_flu <- input$options_flu
 
-    # These are the pathogens that the user chose to fit, forecast is limited to them
-
-    diseases = NULL
-    if (!is.null(options_cov)) {
-      diseases = c(diseases, 'covid19')
-    }
-
-    if (!is.null(options_flu)) {
-      diseases = c(diseases, 'influenza')
-    }
 
     pl_list <- reactive ({
       if (!is.null(prof_data))
