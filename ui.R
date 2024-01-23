@@ -32,7 +32,7 @@ end_fit_date_min <<- c(as.Date(paste0(year_data,'-10-01')))
 end_fit_date_max <<- c(as.Date(paste0(year_data+1,'-06-01')))
 end_fit_date_max[nyear] <<- Sys.Date()
 
-cov_start_fit_date_min <<- c(as.Date('2021-10-15'), as.Date('2022-10-15'),as.Date('2023-06-01'))
+cov_start_fit_date_min <<- c(as.Date('2021-10-15'), as.Date('2022-10-15'),as.Date('2023-07-01'))
 cov_start_fit_date_max <<- c(as.Date('2021-11-15'), as.Date('2022-11-15'),as.Date('2023-10-15'))
 
 flu_start_fit_date_min <<- c(as.Date('2021-09-01'), as.Date('2022-09-01'),as.Date('2023-09-01'))

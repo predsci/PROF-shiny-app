@@ -95,7 +95,7 @@ server <- function(input, output, session) {
     fit_start = NULL
     if (length(disease) > 1) {
       diseases=c("covid19", "influenza")
-      fit_start = list('covid19'=input$cov_start_fit, 'influenza'=input$flu_start)
+      fit_start = list('covid19'=input$cov_start_fit, 'influenza'=input$flu_start_fit)
       options_cov <- input$options_cov
       options_flu <- input$options_flu
       nb_cov <- as.numeric(input$nb_cov)
@@ -111,7 +111,7 @@ server <- function(input, output, session) {
       }
       if (disease == 'influenza') {
         diseases=c("influenza")
-        fit_start = list('influenza'=input$flu_start_fit)
+        fit_start = list('covid19' = NULL, 'influenza'=input$flu_start_fit)
         options_cov <- NULL
         options_flu <- input$options_flu
         nb_cov <- NULL
@@ -124,9 +124,6 @@ server <- function(input, output, session) {
     models = c(options_cov, options_flu)
     nb_vec = c(nb_cov, nb_flu)
 
-    print(fit_start)
-    print(models)
-    print(nb_vec)
     # create 'data_fit' since the user has selected the end_fit date
 
     prof_data <-hhs_set_fitdates(prof_data=prof_data, fit_start=fit_start,

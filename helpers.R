@@ -200,7 +200,9 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
         #
         # model.pred <- simulate(covid_seir, format="data.frame", nsim = 1)
 
+        print(mypar)
         yinit = c(state0$S0, state0$I0, state0$E0, 0, 0, 0, 0)
+        print(yinit)
         parms = c(mypar, 'wl' = wl)
         time0 = parms['time0']
         results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_seirh_dynamics, parms = parms)
