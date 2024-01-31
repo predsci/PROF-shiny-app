@@ -4,6 +4,8 @@ source('helpers.R')
 
 server <- function(input, output, session) {
 
+  shinyjs::onclick("incidence_img",  updateTabsetPanel(session, inputId="navbar", selected= "1. Explore Incidence"))
+
   shared_data <- reactiveValues(data = NULL)
 
   shared_fit <- reactiveValues(data = NULL)
