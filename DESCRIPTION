@@ -1,0 +1,14 @@
+Package: shinyPROF
+Title: A shiny GUI for the PROF package
+Version: 0.0.0.1000
+Authors: Drs. Michal Ben-Nun, James Turtle, Pete Riley
+Maintainer: The package maintainer <mbennun@predsci.com>
+Description: This is a shiny GUI for the PROF package. PROF is a Package for fitting publicly available confirmed hospital admission data and short term probabilistic forecasts.  PROF supports two respiratory viruses: influenza and COVID-19 and when requested will provide an estimate of the combined burden of both.
+License: MIT
+Imports: 
+  config,
+  golem,
+  shiny
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
