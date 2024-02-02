@@ -19,7 +19,7 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
   disease_list = names(prof_data)
 
-  pl = list()
+  pl = total_list = list()
 
   # loop on all diseases
   for (ip in 1:npath) {
@@ -245,6 +245,8 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
     total = as.data.frame(total)
 
+    total_list[[disease]] = total
+    
     cadence = as.numeric(dates[2]-dates[1])
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
@@ -263,13 +265,6 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
     end_year   = start_year + 1
     xlab = paste0(start_year,' - ', end_year)
 
-    # pl[[disease]] <- ggplot(data=total,
-    #                         mapping=aes(x=date))+
-    #   geom_line(aes(y=`50%`),color='red')+
-    #   geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='red',alpha=0.2)+
-    #   geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='red',alpha=0.4)+
-    #   geom_point(aes(y=reported),color='black')+
-    #   labs(y=ylab,x=xlab) + ggtitle(title)
 
 
     pl[[disease]] <- ggplot(data=total,
@@ -285,14 +280,7 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
   } #end of loop over diseases
 
-  # cat("\nMaking Plots\n\n")
-  #
-  # if (npath == 2) {
-  #   suppressWarnings(print(grid.arrange(pl[[1]],  pl[[2]], ncol = 2)))
-  #   } else {
-  #   suppressWarnings(pl[[1]])
-  #
-  #   }
+
 
   interactive_plot <- list()
   for (ip in 1:npath) {
@@ -313,7 +301,7 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
     arrange_plot <- interactive_plot[[1]]
 
   }
-  return(arrange_plot)
+  return(list(arrange_plot = arrange_plot, total_list = total_list))
 
 
 }
@@ -327,7 +315,7 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
 
   disease_list = diseases
 
-  pl = list()
+  pl = total_list = list()
 
   # loop on all diseases
   for (ip in 1:npath) {
@@ -369,6 +357,8 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
 
     total = as.data.frame(total)
 
+    total_list[[disease]] = total
+    
     cadence = as.numeric(dates[2]-dates[1])
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
@@ -400,21 +390,6 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
                                         annotate("text", x = median(total$date), y = max(total[,"97.5%"]), label = mytitle, size = 4)
 
 
-
-    # # Create the Plotly plot using plot_ly
-    # custom_marker_size <- 4
-    # pl[[disease]] <- plot_ly(data = total) %>%
-    #   add_lines(x = ~date, y = ~`50%`, color = mycolor, showlegend = FALSE) %>%
-    #   add_ribbons(x = ~date, ymin = ~`2.5%`, ymax = ~`97.5%`, fill = mycolor, alpha = 0.2, line = list(color = "transparent"), showlegend = FALSE) %>%
-    #   add_ribbons(x = ~date, ymin = ~`25%`, ymax = ~`75%`, fill = mycolor, alpha = 0.4, line = list(color = "transparent"), showlegend = FALSE) %>%
-    #   add_markers(x = ~date, y = ~reported_fit, color = I("black"), alpha = 1,size = custom_marker_size, sizemode = "diameter", sizeref = 0.02, showlegend = FALSE) %>%
-    #   # add_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) %>%
-    #   layout(yaxis = list(title = ylab), xaxis = list(title = xlab), title = mytitle, hovermode = "x unified")
-    #
-    # pl[[disease]] <- pl[[disease]] %>%
-    #   layout(geom_vline(xintercept = dates[ntimes], line = list(color = "cornflowerblue", dash = "dash", width = 1.5)))
-
-
   } #end of loop over diseases
 
   interactive_plot <- list()
@@ -436,14 +411,8 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
     arrange_plot <- interactive_plot[[1]]
 
   }
-  return(arrange_plot)
+  return(list(arrange_plot = arrange_plot, total_list= total_list))
 
-  # cat("\nMaking Plots\n\n")
-  # if (npath == 2) {
-  #   suppressWarnings(print(grid.arrange(pl[[1]], pl[[2]], ncol = 2)))
-  # } else {
-  #   suppressWarnings(pl[[1]])
-  # }
 
 }
 
@@ -462,7 +431,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   disease_list = names(prof_data)
 
-  pl = simdat_list = dates_frcst_list = list()
+  pl = simdat_list = dates_frcst_list = total_list = list()
 
   forecast_traj = list()
 
@@ -738,6 +707,8 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     total = as.data.frame(total)
 
+    total_list[[disease]] = total
+    
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
 
@@ -757,11 +728,6 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     end_year   = start_year + 1
 
     xlab = ''
-    # if (npath == 1) {
-    #   xlab = paste0(start_year,' - ', end_year)
-    # } else {
-    #   xlab = ''
-    # }
 
     vertical_line <- data.frame(
       x = dates[ntimes],  # Specify the x-coordinate where the vertical line should be
@@ -790,7 +756,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   if (npath == 1) {
     interactive_plot[[1]] <- ggplotly(pl[[1]])
     arrange_plot <- interactive_plot[[1]]
-    return(arrange_plot)
+    return(list(arrange_plot = arrange_plot, total_list = total_list))
   }
 
   # If more than one pathogen
@@ -848,6 +814,8 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
                      reported = c(obs_both, rep(NA, length(dates_both)-length(obs_both))),
                      reported_fit = c(obs_fit_both, rep(NA, length(dates_both)-length(obs_fit_both))))
 
+    total_list[[combined_names[[ip]]]] = total_both
+    
     mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
 
 
@@ -890,7 +858,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
                           nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
-  return(arrange_plot)
+  return(list(arrange_plot = arrange_plot, total_list = total_list))
 
 }
 
@@ -905,7 +873,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
   disease_list = diseases
 
-  pl = simdat_list = dates_frcst_list = list()
+  pl = simdat_list = dates_frcst_list = total_list = list()
 
   forecast_traj = list()
 
@@ -1001,6 +969,8 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     total = as.data.frame(total)
 
+    total_list[[disease]] = total
+    
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
 
@@ -1045,7 +1015,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     interactive_plot <- list()
     interactive_plot[[1]] <- ggplotly(pl[[1]])
     arrange_plot <- interactive_plot[[1]]
-    return(arrange_plot)
+    return(list(arrange_plot = arrange_plot, total_list = total_list))
   }
 
 
@@ -1101,6 +1071,8 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
                      reported = c(obs_both, rep(NA, length(dates_both)-length(obs_both))),
                      reported_fit = c(obs_fit_both, rep(NA, length(dates_both)-length(obs_fit_both))))
 
+    total_list[[combined_names[ip]]] = total_both
+    
     mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
 
     # y-label only on left most plot
@@ -1135,13 +1107,6 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
   }
 
   cat("\nMaking Plots\n\n")
-  # if (npath == 2) {
-  #   suppressWarnings(print(grid.arrange(pl[[1]], pl[[2]], pl[[3]], pl[[4]], ncol = 2)))
-  # } else {
-  #   suppressWarnings(pl[[1]])
-  # }
-
-
 
   interactive_plot <- list()
 
@@ -1153,7 +1118,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
                             nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
-  return(arrange_plot)
+  return(list(arrange_plot = arrange_plot, total_list = total_list))
 
 }
 

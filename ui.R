@@ -1,50 +1,3 @@
-# # Load required libraries
-# library(shiny)
-# library(shinyjs)
-# library(shinythemes)
-# library(dplyr)
-# library(ggplot2)
-# library(plotly)
-# library(lubridate)
-# library(deSolve)
-# library(PROF)
-#
-# # download data
-#
-# # download HHS hospitalizations file
-# # result <<- hhs_hosp_state_down(down_dir="~/Downloads")
-#
-# # locations
-# loc_abbv <<- loc_pops$abbreviation
-# loc_name <<- loc_pops$location_name
-#
-# # for now we remove the US and VI
-# ind = which(loc_abbv %in% c('US', 'VI'))
-#
-# loc_abbv <<- loc_abbv[-ind]
-# loc_name <<- loc_name[-ind]
-#
-# year_data <<- c(2021, 2022, 2023)
-# nyear <<- length(year_data)
-#
-# # Define default end dates for fitting
-# # https://www.datanovia.com/en/blog/ggplot-colors-best-tricks-you-will-love/
-# end_fit_date_min <<- c(as.Date(paste0(year_data,'-10-01')))
-# end_fit_date_max <<- c(as.Date(paste0(year_data+1,'-06-01')))
-# end_fit_date_max[nyear] <<- Sys.Date()
-#
-# cov_start_fit_date_min <<- c(as.Date('2021-10-15'), as.Date('2022-10-15'),as.Date('2023-07-01'))
-# cov_start_fit_date_max <<- c(as.Date('2021-11-15'), as.Date('2022-11-15'),as.Date('2023-10-15'))
-#
-# flu_start_fit_date_min <<- c(as.Date('2021-09-01'), as.Date('2022-09-01'),as.Date('2023-09-01'))
-# flu_start_fit_date_max <<- c(as.Date('2021-11-15'), as.Date('2022-11-15'),as.Date('2023-10-15'))
-#
-# # Define colors for plots
-# mycolor_list <<- list('covid19' = "#0072B2", 'influenza'= "#FC4E07",
-#                       'combined' = "#CC79A7") #= "#D55E00",
-
-
-#source('global.R')
 # Define UI
 ui <- navbarPage(
   useShinyjs(),  # Initialize shinyjs
@@ -64,7 +17,7 @@ ui <- navbarPage(
       column(2,""),
       column(4,
 
-             h4(paste0("Version 1.0.1 | Released ",Sys.Date())),
+             h4(paste0("Version 0.0.1000 | Released ",date_updated)),
              #h4("EXPIRES: April 10, 2020"),
              HTML("<h5>CONTACT: mbennun@predsci.com jturtle@predsci.com</h5>"),
              HTML("<h5> <a href='https://github.com/predsci/PROF/'>PROF GitHub </a> | <a href='https://predsci.github.io/PROF/'>PROF Github.io</a>  |  <a href='https://www.predsci.com/usa-flu-hosp/'>PSI Influenza Forecasting Page</a> "),
@@ -116,14 +69,15 @@ ui <- navbarPage(
              ) #End of fluidRow
            ) # End fluid page
   ), # End tab panel
-  # tabsetPanel(
+  
 
     #### Landing Page ####
     tabPanel("1. Explore Incidence",
              fluidPage(
                h2('Download Daily COVID-19 and Influenza Hospitalization Data'),
-               h4("Use the Dropdown menus to select a location and a season. When you completed your selection click the Download button."),
-               h4("You can proceed to the Fitting tab only after the data download is completed. Explore the data by hovering over it."),
+               h4("Use the Dropdown menus to select a location and a season. When you completed your selection click the Download button. 
+               You can proceed to the Fitting tab only after the data download is completed. Explore the data by hovering over it. 
+                  You can save the incidence data to your computer."),
                hr(),
              fluidRow(
                br(),
@@ -183,7 +137,9 @@ ui <- navbarPage(
           });
         ")
                )
-             )
+             ),
+             downloadButton("dlInc", "Save Incidence Data"),
+             h4("Incidence data can be saved after plots are made.")
              ) # End of fluidPage
     ), # End of Incidence Panel
 
@@ -191,12 +147,13 @@ tabPanel("2. Fit Incidence", # The Fitting Tab has the Mechanistic and Statistic
 tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
-               h2("Fitting Compartmetal Models To Data"),
-               h4("Setup a compratmental model for each pathogen.  When a pathogen is selected you will be promted to define
-                  the specifics of the compartmental model. You can proceed to the Forecasting Tab only after the fitting is completed."),
+               h2("Fitting Mechanistic Compartmetal Models To Data"),
+               h4("Setup a compratmental model for each pathogen. PROF supports two models: Susceptible-Exposed-Infectious-Recovered/Hospitalized (SEIRH) 
+               and Susceptible-Infectious-Recovered/Hospitalized (SIRH). You can proceed to the Forecasting Tab only after the fitting is completed. 
+                  You can save the plots data to your computer."),
                hr(),
                column(12,checkboxGroupInput("disease", "Select Pathogens:", choices = c("COVID19"='covid19', "INFLUENZA"='influenza'), inline = TRUE)),
-               h4("You can select both pathogens or only one of them."),
+               h4("You can select both pathogens or only one of them. When a pathogen is selected you will be promted to define the specifics of the compartmental model."),
                column(6,conditionalPanel(
                  condition = "input.disease.indexOf('covid19') !== -1",
                  checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19:",choices  = c("SEIRH"='seirh', "SIRH"='sirh'), inline = TRUE),
@@ -229,9 +186,6 @@ tabsetPanel(
         $('#select_end_fit').parent().css('justify-content', 'center');
       });
     ")),
-               # br(),
-               # br(),
-               # br(),
                br(),
                column(12,actionButton("fitDataButton", "Mechanistic Fit to Incidence")),
                br(),
@@ -245,10 +199,7 @@ tabsetPanel(
         $('#fitDataButton').parent().css('justify-content', 'center');
       });
     ")),
-               # br(),
-               # br(),
                htmlOutput("loading_message_2"),
-               br(),
                br(),
                plotlyOutput("plot3"),
                tags$head(
@@ -273,12 +224,14 @@ tabsetPanel(
           });
         ")
                )
-             )
+             ),
+             downloadButton("dlFitMech", "Save Plots Data"),
+             h4("Compartmental model results can be saved after plots are made.")
     ),
     tabPanel("Statistical",
              fluidPage(
                h2("Fitting A Baseline Statistical Model To The Data"),
-               h4('This model aims to replicate the entire time-series, capturing uncertainty from day-to-day variations in the data.'),
+               h4('This model aims to replicate the entire time-series, capturing uncertainty from day-to-day variations in the data. You can save the plots data to your computer.'),
                hr(),
                column(12, checkboxGroupInput("diseaseStat", "Select Pathogens", choices = c("COVID-19"='covid19', "INFLUENZA" = 'influenza'), inline = TRUE)),
                h4("You can select both pathogens or only one of them. Once you select a pathogen you will be promted to select the start date for the fit."),
@@ -313,7 +266,6 @@ tabsetPanel(
                hr(),
                htmlOutput("loading_message_3"),
                br(),
-               br(),
                plotlyOutput("plot4"),
               tags$head(
                 tags$style(
@@ -337,7 +289,9 @@ tabsetPanel(
           });
         ")
               )
-             )
+             ),
+             downloadButton("dlFitStat", "Save Plots Data"),
+             h4("Statistical model results can be saved after plots are made.")
     )
     )
 ),
@@ -345,7 +299,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
          tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
-               h2("Forecasting Using a Compartmental Model"),
+               h2("Forecasting Using a Mechanistic Compartmental Model"),
                h4("For each fitted pathogen, the posterior distribution of the parameters will be
                   utilized to generate a forecast. Note that only pathogens that were fitted will be forecasted."),
                hr(),
@@ -359,12 +313,6 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                h4("Once you made your selection press the Forecast button."),
                hr(),
                htmlOutput("loading_message_4"),
-               br(),
-               br(),
-               br(),
-               br(),
-               br(),
-               br(),
                plotlyOutput("plot5"),
                tags$head(
                  tags$style(
@@ -386,9 +334,11 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
           $(document).on('shiny:idle', function(event) {
             $('#plot5').removeClass('fading');
           });
-        ")
+        "),
                )
-             )
+             ),
+             downloadButton("dlFrcstMech", "Save Plots Data"),
+             h4("Compartmental model results can be saved after plots are made.")
     ),
     tabPanel("Statistical",
              fluidPage(
@@ -407,15 +357,9 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                br(),
                column(12,actionButton("forecastStatButton", "Statistical Forecast")),
                br(),
-               br(),
                h4("Once you made your selection press the Forecast button."),
                hr(),
                htmlOutput("loading_message_5"),
-               br(),
-               br(),
-               br(),
-               br(),
-               br(),
                br(),
                plotlyOutput("plot6"),
                tags$head(
@@ -440,7 +384,9 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
           });
         ")
                )
-             )
+             ),
+             downloadButton("dlFrcstStat", "Save Plots Data"),
+             h4("Statistical model results can be saved after plots are made.")
     )
     )
     ),
@@ -460,7 +406,13 @@ tabPanel("About",
                          twice and the total hospital burden forecast is estimated by combining the trajectory profiles of each disease
                          in multiple ways, including random, ordered, and semi-ordered. If the statistical model is also chosen, each
                          pathogen is independently fitted with the model and the combinded burden is estimated."),
-           p("For more on PROF see",tags$a(href="https://predsci.github.io/PROF/",'our web documentation'))))
+           p("For more on PROF see",tags$a(href="https://predsci.github.io/PROF/",'our web documentation')),
+           h2('Acknowledgement'),
+           p("The development of PROF is supported by CSTE throught the CDC cooporative agreement number NU38OT000297. 
+             PSI would also like to thank the modeling team at the CA Department of Public Health for their invaluable comments and suggestions. 
+             The PROF GUI is modeled after the State of California Communicable diseases Assesment Tool",
+             tags$a(href="https://github.com/StateOfCalifornia/CalCAT",'CalCAT'))))
+
     # tabPanel("About",
     #          mainPanel(h2("PROF"),
     #                    p("PROF is an R package (with Fortran code) for fitting and forecasting infectious disease incidence.

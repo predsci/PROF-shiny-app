@@ -1,7 +1,5 @@
 # Define server
 
-# source('R/helpers.R')
-
 server <- function(input, output, session) {
 
   shinyjs::onclick("incidence_img",  updateTabsetPanel(session, inputId="navbar", selected= "1. Explore Incidence"))
@@ -44,6 +42,8 @@ server <- function(input, output, session) {
       for (ids in diseases) {
         mydata[[ids]] = loaded_data[[ids]]$data
         mytitle[[ids]] = paste0(loaded_data[[ids]]$loc_name,' - ',toupper(ids))
+        state_abbv = loaded_data[[ids]]$loc_name # it is the same for all pathogens
+        
       }
     }
 
@@ -63,8 +63,42 @@ server <- function(input, output, session) {
       })
 
     shinyjs::html("loading_message_1","")  # Disable loading message
+    
+ 
+    #Downloadable csv file with incidence data for chosen location
+    output$dlInc <- downloadHandler(
+      
+      filename = function() { paste(state_abbv,"_incidence_",Sys.Date(),'.csv', sep='') },
+      
+      content = function(file) {
+        
+        # Title
+        t <- c(paste("Daily Incidence data for", state_abbv, sep = " "),"","","","")
+        #Subtitle
+        tt <-  c(paste("Data Downloaded on",Sys.Date(), sep = " "),"","","","")
+        #Column labels
+        l <- c('loc_abbv', 'date','disease','metric','value')
+        df = list()
+        for (ids in diseases) {
+          date = mydata[[ids]]$date
+          inc  = mydata[[ids]]$inc
+          loc  = rep(state_abbv, length(date))
+          disease = rep(ids, length(date))
+          metric  = rep('hosp', length(date))
+          df[[ids]] = data.frame('loc_abbv' = loc, 'date' = date, 'disease' = disease, 'metric'= metric, 'value' = inc)
+        }
+        if (length(df) > 1) df_tot = rbind(df[[1]], df[[2]])
+        
+        df_tot[] <- lapply(df_tot, as.character)
+        
+        #Source
+        # s <- c("Please see the Technical Notes tab of the application for data sources.","","","","")
+        # p <- c("Prepared by Predictive Science Inc.","","","","")
 
-
+        # dlm <- rbind(t, tt, l, df_tot, s, p)
+        dlm <- rbind(t, tt, l, df_tot)
+        write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
+      })   
   })
 
 
@@ -143,15 +177,51 @@ server <- function(input, output, session) {
 
     shared_par$data = par_list
 
-    pl_list <- reactive ({
-      if (!is.null(fit_list))
+    mech_fit <- reactive ({
+      if (!is.null(prof_data))
         shiny_plot_fit(prof_data = prof_data[diseases], par_list = par_list, fit_list = fit_list)
     })
-
-
-    output$plot3 <- renderPlotly({pl_list()})
-
+    
+    output$plot3 <- renderPlotly({mech_fit()$arrange_plot})
+    
     shinyjs::html("loading_message_2","")  # Disable fitting message
+    
+    #Downloadable csv file with mechanistic fit to data
+    
+    state_abbv = input$location
+    
+    output$dlFitMech <- downloadHandler(
+      
+      filename = function() { paste(state_abbv,"_compartmental_fit_",Sys.Date(),'.csv', sep='') },
+      
+      content = function(file) {
+        
+        # Title
+        t <- c(paste("Compartmenal Model Fit to", state_abbv,'Hospitalization data', sep = " "),"","","","","","","","","")
+        #Subtitle
+        tt <-  c(paste("Data Fitted on",Sys.Date(), sep = " "),"","","","","","","","","")
+        #Column labels
+        l <- c('loc_abbv', 'date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
+        df = list()
+        for (ids in diseases) {
+          total = mech_fit()$total_list[[ids]]
+          loc = rep(state_abbv, length(nrow(total)))
+          disease = rep(ids, length(nrow(total)))
+          metric = rep('hosp', length(nrow(total)))
+          date = total$date
+          inc = total$reported
+          sbst_total = subset(total, select = c("2.5%","25%","50%","75%","97.5%"))
+          sbst_total = round(sbst_total, digits = 2)
+          df[[ids]] = data.frame('loc_abbv' = loc, 'date' = date, 'disease'=disease,'metric'= metric, 'value' = inc, sbst_total)
+          colnames(df[[ids]]) = c('loc_abbv','date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
+        }
+        if (length(df) > 1) df_tot = rbind(df[[1]], df[[2]])
+        
+        df_tot[] <- lapply(df_tot, as.character)
+        
+        dlm <- rbind(t, tt, l, df_tot)
+        write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
+      })   
   })
 
 
@@ -173,9 +243,7 @@ server <- function(input, output, session) {
       }
       if (diseaseStat == 'influenza') {
         diseases=c("influenza")
-        print(input$flu_start_fit_stat)
         fit_start = list('influenza'=input$flu_start_fit_stat)
-        print(input$flu_start_fit_stat)
       }
 
     }
@@ -189,15 +257,55 @@ server <- function(input, output, session) {
 
     #updateSelectInput(session, "disease", choices = )
 
-    pl_list <- reactive ({
+    stat_fit <- reactive ({
       if (!is.null(prof_data))
         shiny_plot_stat_fit(prof_data = prof_data, diseases = diseases)
     })
 
-
-    output$plot4 <- renderPlotly({pl_list()})
+    
+    output$plot4 <- renderPlotly({stat_fit()$arrange_plot})
 
     shinyjs::html("loading_message_3","")  # Disable fitting message
+    
+   
+    #Downloadable csv file with statistical fit to data
+    
+    state_abbv = input$location
+    
+    output$dlFitStat <- downloadHandler(
+      
+      filename = function() { paste(state_abbv,"_stat_fit_",Sys.Date(),'.csv', sep='') },
+      
+      content = function(file) {
+        
+        # Title
+        t <- c(paste("Baseline Statistical Fit to", state_abbv,'Hospitalization data', sep = " "),"","","","","","","","","")
+        #Subtitle
+        tt <-  c(paste("Data Fitted on",Sys.Date(), sep = " "),"","","","","","","","","")
+        #Column labels
+        l <- c('loc_abbv', 'date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
+        df = list()
+        for (ids in diseases) {
+          total = stat_fit()$total_list[[ids]]
+          loc = rep(state_abbv, length(nrow(total)))
+          disease = rep(ids, length(nrow(total)))
+          metric = rep('hosp', length(nrow(total)))
+          date = total$date
+          inc = total$reported_fit
+          sbst_total = subset(total, select = c("2.5%","25%","50%","75%","97.5%"))
+          sbst_total = round(sbst_total, digits = 2)
+          df[[ids]] = data.frame('loc_abbv' = loc, 'date' = date, 'disease'=disease,'metric'= metric, 'value' = inc, sbst_total)
+          colnames(df[[ids]]) = c('loc_abbv','date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
+         
+        }
+        if (length(df) > 1) df_tot = rbind(df[[1]], df[[2]])
+        
+        df_tot[] <- lapply(df_tot, as.character)
+       
+        dlm <- rbind(t, tt, l, df_tot)
+        write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
+      })   
+    
   })
 
 
@@ -239,21 +347,57 @@ server <- function(input, output, session) {
 
     }
 
-    # models = c(options_cov, options_flu)
-    # nb_vec = c(nb_cov, nb_flu)
-
     shinyjs::html("loading_message_4","<strong>Calculating Forecast..Please Wait.</strong>")
 
-
-
-    pl_list <- reactive ({
+    mech_forecast <- reactive ({
       if (!is.null(prof_data))
         shiny_plot_forecast(prof_data = prof_data[diseases], par_list, fit_list, ntraj =1000, nfrcst = input$days_frcst)
     })
 
-    output$plot5 <- renderPlotly({pl_list()})
+    output$plot5 <- renderPlotly({mech_forecast()$arrange_plot})
 
     shinyjs::html("loading_message_4","")  # Disable fitting message
+    
+    #Downloadable csv file with Mechanistic forecast to data
+    
+    state_abbv = input$location
+    
+    output$dlFrcstMech <- downloadHandler(
+      
+      filename = function() { paste(state_abbv,"_compartmental_forecast_",Sys.Date(),'.csv', sep='') },
+      
+      content = function(file) {
+        
+        # Title
+        t <- c(paste("Compartmental Forecast to", state_abbv,'Hospitalization data', sep = " "),"","","","","","","","","")
+        #Subtitle
+        tt <-  c(paste("Data Fitted on",Sys.Date(), sep = " "),"","","","","","","","","")
+        #Column labels
+        l <- c('loc_abbv', 'date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
+        df = list()
+        for (ids in names(mech_forecast()$total_list)) {
+          total = mech_forecast()$total_list[[ids]]
+          loc = rep(state_abbv, length(nrow(total)))
+          my_disease = ids
+          if (my_disease == 'random') my_disease = 'combined-random' 
+          if (my_disease == 'sorted') my_disease = 'combined-sorted' 
+          disease = rep(my_disease, length(nrow(total)))
+          metric = rep('hosp', length(nrow(total)))
+          date = total$date
+          inc = total$reported_fit
+          sbst_total = subset(total, select = c("2.5%","25%","50%","75%","97.5%"))
+          sbst_total = round(sbst_total, digits = 2)
+          df[[ids]] = data.frame('loc_abbv' = loc, 'date' = date, 'disease'=disease,'metric'= metric, 'value' = inc, sbst_total)
+          colnames(df[[ids]]) = c('loc_abbv','date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
+        }
+        if (length(df) > 1) df_tot = rbind(df[[1]], df[[2]], df[[3]], df[[4]])
+        
+        df_tot[] <- lapply(df_tot, as.character)
+        
+        dlm <- rbind(t, tt, l, df_tot)
+        write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
+      })   
+    
   })
 
   # Observe button click for Tab 5
@@ -269,22 +413,59 @@ server <- function(input, output, session) {
       if (input$diseaseStatFrcst == 'covid19') diseases=c("covid19")
       if (input$diseaseStatFrcst == 'influenza') diseases = c("influenza")
     }
-    # if (input$diseaseStatFrcst == 'covid19') {
-    #   diseases=c("covid19")
-    # } else if (input$diseaseStatFrcst == 'influenza') {
-    #   diseases=c("influenza")
-    # } else {
-    #   diseases=c("covid19", "influenza")
-    # }
 
-    pl_list <- reactive ({
+    stat_forecast <- reactive ({
       if (!is.null(prof_data))
         shiny_plot_stat_forecast(prof_data = prof_data, diseases = diseases, nfrcst = input$days_frcst_stat)
     })
+    
 
-    output$plot6 <- renderPlotly({pl_list()})
+    output$plot6 <- renderPlotly({stat_forecast()$arrange_plot})
+    
+    # output$plot6 <- renderPlotly({stat_forecast()$arrange_plot})
 
     shinyjs::html("loading_message_5","")  # Disable fitting message
+    
+    #Downloadable csv file with statistical forecast 
+    
+    state_abbv = input$location
+    
+    output$dlFrcstStat <- downloadHandler(
+      
+      filename = function() { paste(state_abbv,"_stat_forecast_",Sys.Date(),'.csv', sep='') },
+      
+      content = function(file) {
+        
+        # Title
+        t <- c(paste("Baseline Statistical Forecast to", state_abbv,'Hospitalization data', sep = " "),"","","","","","","","","")
+        #Subtitle
+        tt <-  c(paste("Data Fitted on",Sys.Date(), sep = " "),"","","","","","","","","")
+        #Column labels
+        l <- c('loc_abbv', 'date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
+        df = list()
+        for (ids in names(stat_forecast()$total_list)) {
+          total = stat_forecast()$total_list[[ids]]
+          loc = rep(state_abbv, length(nrow(total)))
+          my_disease = ids
+          if (my_disease == 'random') my_disease = 'combined-random' 
+          if (my_disease == 'sorted') my_disease = 'combined-sorted' 
+          disease = rep(my_disease, length(nrow(total)))
+          metric = rep('hosp', length(nrow(total)))
+          date = total$date
+          inc = total$reported_fit
+          sbst_total = subset(total, select = c("2.5%","25%","50%","75%","97.5%"))
+          sbst_total = round(sbst_total, digits = 2)
+          df[[ids]] = data.frame('loc_abbv' = loc, 'date' = date, 'disease'=disease,'metric'= metric, 'value' = inc, sbst_total)
+          colnames(df[[ids]]) = c('loc_abbv','date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
+        }
+        if (length(df) > 1) df_tot = rbind(df[[1]], df[[2]], df[[3]], df[[4]])
+        
+        df_tot[] <- lapply(df_tot, as.character)
+        
+        dlm <- rbind(t, tt, l, df_tot)
+        write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
+      })   
+    
   })
 
 

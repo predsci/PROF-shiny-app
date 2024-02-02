@@ -1,18 +1,3 @@
-# Load required libraries
-# library(shiny)
-# library(shinyjs)
-# library(shinythemes)
-# library(dplyr)
-# library(ggplot2)
-# library(plotly)
-# library(lubridate)
-# library(deSolve)
-# library(PROF)
-
-# download data
-
-# download HHS hospitalizations file
-# result <- hhs_hosp_state_down(down_dir="~/Downloads")
 
 if(!require(pacman)){
   install.packages("pacman")
@@ -21,6 +6,10 @@ required_packages <- c('shiny','shinyjs','shinythemes','dplyr','ggplot2','plotly
                        'lubridate','deSolve','PROF')
 
 pacman::p_load(required_packages, character.only = TRUE)
+
+# date of update
+
+date_updated = "February 2, 2024"
 
 # locations
 loc_abbv <- loc_pops$abbreviation
