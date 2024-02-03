@@ -79,17 +79,26 @@ ui <- navbarPage(
                You can proceed to the Fitting tab only after the data download is completed. Explore the data by hovering over it. 
                   You can save the incidence data to your computer."),
                hr(),
+               fluidRow(
+                 br(),
+                 column(8, h4(htmlOutput(outputId="data_message"))),
+                 column(4, actionButton(inputId="downloadDataButton", 
+                                        label="Download Data")),
+                 br(),
+                 htmlOutput("loading_message_1a")
+               ),
+               hr(),
              fluidRow(
                br(),
                column(6, selectInput("location", "Select Location:", choices = loc_abbv, selected = 'CA')),
                # column(2,""),
                column(6,selectInput("season", "Select Season:", choices = year_data, selected = 2023)),
                # column(4,""),
-               column(6,actionButton("loadDataButton", "Download Incidence Data")),
+               column(6,actionButton("plotDataButton", "Plot Incidence Data")),
                column(3,""),
                br(),
                br(),
-               htmlOutput("loading_message_1"),
+               htmlOutput("loading_message_1b"),
                br(),
                br(),
                br(),

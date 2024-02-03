@@ -12,15 +12,19 @@ server <- function(input, output, session) {
 
   dates_data <- reactiveValues(data = NULL)
 
+  download_trigger <- reactiveValues(num=0)
+  
   # Observe button click for Tab 1
-  observeEvent(input$loadDataButton, {
+  observeEvent(input$plotDataButton, {
 
-    shinyjs::html("loading_message_1","<strong> Loading Data..Please Wait</strong>")
+    shinyjs::html("loading_message_1b","<strong> Loading Data..Please Wait</strong>")
 
     # download HHS hospitalizations file
-    result <- hhs_hosp_state_down(down_dir="~/Downloads")
-    loaded_data <- hhs_2_PROF(hhs_path=result$download_path, season = as.numeric(input$season), state=input$location)
-    # loaded_data <- hhs_data_ex(season = as.numeric(input$season), state=input$location)
+    # result <- hhs_hosp_state_down(down_dir="~/Downloads")
+    # loaded_data <- hhs_2_PROF(hhs_path=result$download_path, season = as.numeric(input$season), state=input$location)
+    data_path = "data/HHS_daily-hosp_state.csv"
+    loaded_data <- hhs_2_PROF(hhs_path=data_path, season=as.numeric(input$season), 
+                              state=input$location)
 
     # note that both loaded_data does not yet have  the data_fit list in it 'data_fit'
     shared_data$data = loaded_data
@@ -62,7 +66,7 @@ server <- function(input, output, session) {
                hovermode = "x unified")
       })
 
-    shinyjs::html("loading_message_1","")  # Disable loading message
+    shinyjs::html("loading_message_1b","")  # Disable loading message
     
  
     #Downloadable csv file with incidence data for chosen location
@@ -101,6 +105,38 @@ server <- function(input, output, session) {
       })   
   })
 
+  
+  # Observe button click for data download
+  observeEvent(input$downloadDataButton, {
+    
+    shinyjs::html("loading_message_1a","<strong> Downloading Data..Please Wait</strong>")
+    
+    # download HHS hospitalizations file
+    result <- hhs_hosp_state_down(down_dir="data")
+    
+    shinyjs::html("loading_message_1a","")  # Disable loading message
+    
+    # bump download_trigger so the data message updates
+    download_trigger$num = download_trigger$num + 1
+  })
+  
+  # Get data file status when app is loaded
+  output$data_message <- reactive({
+    # update anytime download_trigger changes
+    req(download_trigger$num)
+    # load data file
+    hhs_data = read.csv(file="data/HHS_daily-hosp_state.csv")
+    data_date = as.Date(max(hhs_data$date))
+    cur_date = Sys.Date()
+    
+    if ((cur_date - data_date) < 12) {
+      data_message = "The local PROF-Shiny data file appears to be up-to-date, but the data file can be updated using the Download Data button."
+    } else {
+      data_message = paste0("The local PROF-Shiny data file contains data from over 11 days ago (", data_date, "). Pressing the 'Download Data' button will likely result in more up-to-date data.")
+    }
+    # renderText(data_message)
+    data_message
+  })
 
  observe({
    if (!is.null(shared_data$data)) {
