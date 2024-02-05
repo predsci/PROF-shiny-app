@@ -69,20 +69,20 @@ ui <- navbarPage(
              ) #End of fluidRow
            ) # End fluid page
   ), # End tab panel
-  
+
 
     #### Landing Page ####
     tabPanel("1. Explore Incidence",
              fluidPage(
                h2('Download Daily COVID-19 and Influenza Hospitalization Data'),
-               h4("Use the Dropdown menus to select a location and a season. When you completed your selection click the Download button. 
-               You can proceed to the Fitting tab only after the data download is completed. Explore the data by hovering over it. 
+               h4("Use the Dropdown menus to select a location and a season. When you completed your selection click the Download button.
+               You can proceed to the Fitting tab only after the data download is completed. Explore the data by hovering over it.
                   You can save the incidence data to your computer."),
                hr(),
                fluidRow(
                  br(),
                  column(8, h4(htmlOutput(outputId="data_message"))),
-                 column(4, actionButton(inputId="downloadDataButton", 
+                 column(4, actionButton(inputId="downloadDataButton",
                                         label="Download Data")),
                  br(),
                  htmlOutput("loading_message_1a")
@@ -157,12 +157,12 @@ tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
                h2("Fitting Mechanistic Compartmetal Models To Data"),
-               h4("Setup a compratmental model for each pathogen. PROF supports two models: Susceptible-Exposed-Infectious-Recovered/Hospitalized (SEIRH) 
-               and Susceptible-Infectious-Recovered/Hospitalized (SIRH). You can proceed to the Forecasting Tab only after the fitting is completed. 
+               h4("Setup a compratmental model for each pathogen. PROF supports two models: Susceptible-Exposed-Infectious-Recovered/Hospitalized (SEIRH)
+               and Susceptible-Infectious-Recovered/Hospitalized (SIRH). You can proceed to the Forecasting Tab only after the fitting is completed.
                   You can save the plots data to your computer."),
                hr(),
                column(12,checkboxGroupInput("disease", "Select Pathogens:", choices = c("COVID19"='covid19', "INFLUENZA"='influenza'), inline = TRUE)),
-               h4("You can select both pathogens or only one of them. When a pathogen is selected you will be promted to define the specifics of the compartmental model."),
+               h4("You can select both pathogens or only one of them. When a pathogen is selected you will be prompted to define the specifics of the compartmental model."),
                column(6,conditionalPanel(
                  condition = "input.disease.indexOf('covid19') !== -1",
                  checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19:",choices  = c("SEIRH"='seirh', "SIRH"='sirh'), inline = TRUE),
@@ -417,8 +417,8 @@ tabPanel("About",
                          pathogen is independently fitted with the model and the combinded burden is estimated."),
            p("For more on PROF see",tags$a(href="https://predsci.github.io/PROF/",'our web documentation')),
            h2('Acknowledgement'),
-           p("The development of PROF is supported by CSTE throught the CDC cooporative agreement number NU38OT000297. 
-             PSI would also like to thank the modeling team at the CA Department of Public Health for their invaluable comments and suggestions. 
+           p("The development of PROF is supported by CSTE throught the CDC cooporative agreement number NU38OT000297.
+             PSI would also like to thank the modeling team at the CA Department of Public Health for their invaluable comments and suggestions.
              The PROF GUI is modeled after the State of California Communicable diseases Assesment Tool",
              tags$a(href="https://github.com/StateOfCalifornia/CalCAT",'CalCAT'))))
 
