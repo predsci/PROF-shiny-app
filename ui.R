@@ -211,6 +211,8 @@ tabsetPanel(
                htmlOutput("loading_message_2"),
                br(),
                plotlyOutput("plot3"),
+               br(),
+               h4("Black circles are reported data, line and shaded areas are the median, 50% and 95% confidence intervals."),
                tags$head(
                  tags$style(
                    HTML("
@@ -276,6 +278,8 @@ tabsetPanel(
                htmlOutput("loading_message_3"),
                br(),
                plotlyOutput("plot4"),
+               br(),
+               h4("Black circles are reported data, line and shaded areas are the median, 50% and 95% confidence intervals."),
               tags$head(
                 tags$style(
                   HTML("
@@ -323,6 +327,8 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                hr(),
                htmlOutput("loading_message_4"),
                plotlyOutput("plot5"),
+               br(),
+               h4("Black circles are reported data, line and shaded areas are the median, 50% and 95% confidence intervals."),
                tags$head(
                  tags$style(
                    HTML("
@@ -367,6 +373,8 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                htmlOutput("loading_message_5"),
                br(),
                plotlyOutput("plot6"),
+               br(),
+               h4("Black circles are reported data, line and shaded areas are the median, 50% and 95% confidence intervals."),
                tags$head(
                  tags$style(
                    HTML("

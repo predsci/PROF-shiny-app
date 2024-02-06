@@ -346,7 +346,7 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
     quantiles <- as.data.frame(quantiles)
 
     total=cbind(date = as.Date(dates, format = '%Y-%m-%d'),time = 1:ntimes,quantiles,
-                reported_fit = reported_fit)
+                reported = reported_fit)
 
     total = as.data.frame(total)
 
@@ -376,7 +376,7 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
                                         geom_line(aes(y=`50%`),color=mycolor)+
                                         geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.3)+
                                         geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.5)+
-                                        geom_point(aes(y=reported_fit),color='black', alpha = 1., size = 0.5)+
+                                        geom_point(aes(y=reported),color='black', alpha = 1., size = 0.5)+
                                         geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", linewidth = 1.5) +
                                         labs(y=ylab,x=xlab)+
                                         theme(plot.title = element_text(hjust = 0.5, vjust = 0.8)) +
