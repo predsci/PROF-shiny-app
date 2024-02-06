@@ -353,11 +353,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
              fluidPage(
                h2("Forecasing With A Baseline Statistical Model"),
                h4("This model aims to replicate the entire time-series, capturing uncertainty from day-to-day variations in the data.
-               Median forecast values reproduce the seven last observed values. Your choices of pathogens here is independent of choices
-                  you made before and only requires the incidence data."),
-               hr(),
-               column(12, checkboxGroupInput("diseaseStatFrcst", "Select Pathogens", choices = c("COVID-19"='covid19', "INFLUENZA" = 'influenza'))),
-               h4('You can select either both pathogens or only one of them.'),
+               Median forecast values reproduce the seven last observed values."),
                hr(),
                column(12,sliderInput("days_frcst_stat", "Select Number of Days For Forecast:",
                            min = 7, max = 42, value = c(35))),
@@ -422,24 +418,6 @@ tabPanel("About",
              The PROF GUI is modeled after the State of California Communicable diseases Assesment Tool",
              tags$a(href="https://github.com/StateOfCalifornia/CalCAT",'CalCAT'))))
 
-    # tabPanel("About",
-    #          mainPanel(h2("PROF"),
-    #                    p("PROF is an R package (with Fortran code) for fitting and forecasting infectious disease incidence.
-    #                      The package ingests publicly-available confirmed hospital admission data, fits mechanistic and statistical
-    #                      models to the data, and provides short-term probabilistic forecasts. Currently, the package supports fitting
-    #                      and forecasting the individual and combined burden of influenza and COVID-19 at the state level.
-    #                      S[I]2HR and SE[I]2HR models are used to fit the two pathogens and both models use a flexible,
-    #                      time-dependent transmission term. A baseline statistical model is also offered for each pathogen.
-    #                      Once the User selects a state, and either one or both viruses,
-    #                      the PROF fitting procedure iteratively determines the joint posterior distribution of model parameters.
-    #                      The joint posterior distribution is then used with the model to generate location-specific probabilistic
-    #                      forecasts of the near-term number of hospital admissions. If both viruses are chosen, this procedure is done
-    #                      twice and the total hospital burden forecast is estimated by combining the trajectory profiles of each disease
-    #                      in multiple ways, including random, ordered, and semi-ordered. If the statistical model is also chosen, each
-    #                      pathogen is independently fitted with the model and the combinded burden is estimated."),
-    #                    p("For more on PROF see ",tags$a(href="https://predsci.github.io/PROF/",'our web documentation'))))
-
-  # )
 )
 
 

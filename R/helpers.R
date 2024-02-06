@@ -1,10 +1,3 @@
-# library(dplyr)
-# library(ggplot2)
-# library(plotly)
-# library(gridExtra)
-# library(PROF)
-# library(pomp)
-
 shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
   tab_list = fit_list$tab_list
@@ -246,7 +239,7 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
     total = as.data.frame(total)
 
     total_list[[disease]] = total
-    
+
     cadence = as.numeric(dates[2]-dates[1])
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
@@ -358,7 +351,7 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
     total = as.data.frame(total)
 
     total_list[[disease]] = total
-    
+
     cadence = as.numeric(dates[2]-dates[1])
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
@@ -708,7 +701,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     total = as.data.frame(total)
 
     total_list[[disease]] = total
-    
+
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
 
@@ -815,7 +808,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
                      reported_fit = c(obs_fit_both, rep(NA, length(dates_both)-length(obs_fit_both))))
 
     total_list[[combined_names[[ip]]]] = total_both
-    
+
     mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
 
 
@@ -970,7 +963,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     total = as.data.frame(total)
 
     total_list[[disease]] = total
-    
+
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
 
@@ -1072,7 +1065,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
                      reported_fit = c(obs_fit_both, rep(NA, length(dates_both)-length(obs_fit_both))))
 
     total_list[[combined_names[ip]]] = total_both
-    
+
     mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
 
     # y-label only on left most plot
