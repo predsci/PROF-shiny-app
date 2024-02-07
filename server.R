@@ -321,13 +321,14 @@ server <- function(input, output, session) {
         #Column labels
         l <- c('loc_abbv', 'date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
         df = list()
-        for (ids in diseases) {
+
+        for (ids in diseaseStat) {
           total = stat_fit()$total_list[[ids]]
           loc = rep(state_abbv, length(nrow(total)))
           disease = rep(ids, length(nrow(total)))
           metric = rep('hosp', length(nrow(total)))
           date = total$date
-          inc = total$reported_fit
+          inc = total$reported
           sbst_total = subset(total, select = c("2.5%","25%","50%","75%","97.5%"))
           sbst_total = round(sbst_total, digits = 2)
           df[[ids]] = data.frame('loc_abbv' = loc, 'date' = date, 'disease'=disease,'metric'= metric, 'value' = inc, sbst_total)

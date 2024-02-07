@@ -74,9 +74,10 @@ ui <- navbarPage(
     #### Landing Page ####
     tabPanel("1. Explore Incidence",
              fluidPage(
-               h2('Download Daily COVID-19 and Influenza Hospitalization Data'),
-               h4("Use the Dropdown menus to select a location and a season. When you completed your selection click the Download button.
-               You can proceed to the Fitting tab only after the data download is completed. Explore the data by hovering over it.
+               h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
+               h4("Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
+               The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
+               for an update if needed. You can proceed to the Fitting tab only after the data download is completed. Explore the data by hovering over it.
                   You can save the incidence data to your computer."),
                hr(),
                fluidRow(
@@ -317,7 +318,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                   utilized to generate a forecast. Note that only pathogens that were fitted will be forecasted."),
                hr(),
                column(12,sliderInput("days_frcst", "Select Number of Days For Forecast:",
-                                    min = 7, max = 42, value = c(35))),
+                                    min = 7, max = 42, value = c(28))),
                h4("Move the slider to select the number of days for the forecast."),
                br(),
                column(12,actionButton("forecastButton", "Mechanistic Forecast")),
@@ -362,7 +363,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                Median forecast values reproduce the seven last observed values."),
                hr(),
                column(12,sliderInput("days_frcst_stat", "Select Number of Days For Forecast:",
-                           min = 7, max = 42, value = c(35))),
+                           min = 7, max = 42, value = c(28))),
                br(),
                h4("Move the slider to select the number of days for the forecast."),
                br(),

@@ -12,7 +12,7 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
   disease_list = names(prof_data)
 
-  pl = total_list = list()
+  pl = total_list = simdat_list = list()
 
   # loop on all diseases
   for (ip in 1:npath) {
@@ -229,6 +229,8 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
     }
 
+    simdat_list[[disease]] = simdat
+
      apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles
 
     quantiles <- t(quantiles)
@@ -274,6 +276,21 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
   } #end of loop over diseases
 
 
+ # save the results along with the input in an rds file
+
+  filename = paste0(reg_name,'_fit_results_',Sys.Date(),'.rds')
+  results = list(prof_data = prof_data, par_list = par_list, fit_list=fit_list, simdat_list = simdat_list)
+
+ # check to see if directory exists
+ directory_path = paste0('data/',toupper(reg_name))
+
+ if (!dir.exists(directory_path)) {
+   # If it doesn't exist, create the directory
+   dir.create(directory_path, recursive = TRUE)  # Use recursive = TRUE to create parent directories if they don't exist
+   print(paste("Directory", directory_path, "created."))
+ }
+ saveRDS(results, file=paste0(directory_path,'/',filename))
+ print(paste0('Compartmental Mechanistic Results Saved to data/',toupper(reg_name),'/', filename))
 
   interactive_plot <- list()
   for (ip in 1:npath) {
