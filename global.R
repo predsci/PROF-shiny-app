@@ -37,5 +37,7 @@ flu_start_fit_date_min <- c(as.Date('2021-09-01'), as.Date('2022-09-01'),as.Date
 flu_start_fit_date_max <- c(as.Date('2021-11-15'), as.Date('2022-11-15'),as.Date('2023-10-15'))
 
 # Define colors for plots
-mycolor_list <- list('covid19' = "#0072B2", 'influenza'= "#FC4E07",
+mycolor_list <- list('covid19' = "#F8766D", 'influenza'= "#00BFC4",
                       'combined' = "#CC79A7") #= "#D55E00",
+
+

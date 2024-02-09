@@ -265,10 +265,10 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
     pl[[disease]] <- ggplot(data=total,
                             mapping=aes(x=date))+
       geom_line(aes(y=`50%`),color=mycolor)+
-      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.3)+
-      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.5)+
+      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.4)+
+      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.7)+
       geom_point(aes(y=reported),color='black', alpha = 1., size = 0.5)+
-      geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", linewidth = 1.5) +
+      # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", linewidth = 1.5) +
       labs(y=ylab,x=xlab)+
       theme(plot.title = element_text(hjust = 0.5, vjust = 0.8)) +
       annotate("text", x = median(total$date), y = max(total[,"97.5%"]), label = mytitle, size = 4)
@@ -391,10 +391,10 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
     pl[[disease]] <- ggplot(data=total,
                                              mapping=aes(x=date))+
                                         geom_line(aes(y=`50%`),color=mycolor)+
-                                        geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.3)+
-                                        geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.5)+
+                                        geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.4)+
+                                        geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.7)+
                                         geom_point(aes(y=reported),color='black', alpha = 1., size = 0.5)+
-                                        geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", linewidth = 1.5) +
+                                        # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", linewidth = 1.5) +
                                         labs(y=ylab,x=xlab)+
                                         theme(plot.title = element_text(hjust = 0.5, vjust = 0.8)) +
                                         annotate("text", x = median(total$date), y = max(total[,"97.5%"]), label = mytitle, size = 4)
@@ -444,6 +444,8 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   pl = simdat_list = dates_frcst_list = total_list = list()
 
   forecast_traj = list()
+
+  reported_list = reported_fit_list = list()
 
   # loop on all diseases
   for (ip in 1:npath) {
@@ -719,6 +721,13 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     total_list[[disease]] = total
 
+    reported_list[[disease]] = reported
+    reported_fit_list[[disease]] = reported_fit
+
+    copy_total = total
+
+    total[1:length(obs_fit), c('2.5%','25%','50%','75%','97.5%')] <- NA
+
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
 
@@ -741,21 +750,33 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     vertical_line <- data.frame(
       x = dates[ntimes],  # Specify the x-coordinate where the vertical line should be
-      y = c(0, max(total[,"97.5%"]))  # Specify the y-coordinate range (adjust as needed)
+      y = c(0, max(total[,c("reported","97.5%")]))  # Specify the y-coordinate range (adjust as needed)
     )
 
-    pl[[disease]] <- ggplot(data=total,
-                            mapping=aes(x=date))+
-      geom_line(aes(y=`50%`),color=mycolor)+
-      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
-      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
-      geom_point(aes(y=reported),color='black', alpha = 0.5, size = 0.5)+
-      geom_point(aes(y=reported_fit),color='black', alpha = 1., size = 0.5)+
-      geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
-      # geom_vline(xintercept = total$date[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
-      labs(y=ylab,x=xlab) + #,title=mytitle)+
-      theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-      annotate("text", x = median(total$date), y = 0.93 *max(total[,"97.5%"]), label = mytitle, size = 4)
+    pl[[disease]] <- ggplot(data=total,aes(x=date))+
+      # geom_col(aes(y=reported_fit), fill = mycolor, alpha = 1.) +
+      geom_col(aes(y=reported), fill = mycolor, alpha = 1.) +
+      # geom_col(aes(y=reported), stat = "identity", fill = default_colors[(ip)], alpha = 0.4) +
+      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='darkgrey',alpha=0.5)+
+      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='darkgrey',alpha=0.8)+
+      geom_line(aes(y=`50%`),color='black')+
+      # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
+      labs(y=ylab,x=xlab) +
+      theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
+      annotate("text", x = median(total$date), y = 0.93*max(total[,c('reported',"97.5%")], na.rm=TRUE), label = mytitle, size = 4)
+
+    # pl[[disease]] <- ggplot(data=total,
+    #                         mapping=aes(x=date))+
+    #   geom_line(aes(y=`50%`),color=mycolor)+
+    #   geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
+    #   geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
+    #   geom_point(aes(y=reported),color='black', alpha = 0.5, size = 0.5)+
+    #   geom_point(aes(y=reported_fit),color='black', alpha = 1., size = 0.5)+
+    #   geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
+    #   # geom_vline(xintercept = total$date[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
+    #   labs(y=ylab,x=xlab) + #,title=mytitle)+
+    #   theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
+    #   annotate("text", x = median(total$date), y = 0.93 *max(total[,"97.5%"]), label = mytitle, size = 4)
 
   } #end of loop over diseases
 
@@ -775,6 +796,10 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   cat("Combining Forecasts \n")
 
   combined_frcst <- combine_forecasts(prof_data, dates_frcst_list, simdat_list)
+
+  obs_each_list = combined_frcst$obs_each_list
+
+  obs_fit_each_list = combined_frcst$obs_fit_each_list
 
   simdat_both = combined_frcst$simdat_both
 
@@ -808,6 +833,16 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     both_max = max(both_max, round(max(simdat_both[[ip]])))
   }
 
+  # create a long data-frame with the reported values for both pathogens
+  data_df_list = list()
+
+  for (ip in 1:npath) {
+
+    data_df_list[[ip]] = data.frame(date = as.Date(dates_both, format = '%Y-%m-%d'),disease = rep(disease_list[[ip]], length(dates_both)),
+                                    reported = c(obs_each_list[[ip]], rep(NA, length(dates_both)-length(obs_both))))
+  }
+  data_df = rbind(data_df_list[[1]], data_df_list[[2]])
+
   for (ip in 1:npath) {
 
     apply(simdat_both[[ip]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
@@ -826,8 +861,10 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     total_list[[combined_names[[ip]]]] = total_both
 
-    mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
+    copy_total_both = total_both
+    total_both[1:length(obs_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
 
+    mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
 
     # y-label only on left most plot
     if (ip == 1) {
@@ -846,17 +883,28 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     pl[[combined_names[ip]]] <- ggplot(data=total_both,
                                        mapping=aes(x=date))+
-      geom_line(aes(y=`50%`),color=mycolor)+
-      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
-      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
-      geom_point(aes(y=reported),color='black', alpha = 0.5,size=0.5)+
-      geom_point(aes(y=reported_fit),color='black', alpha = 1.,size=0.5)+
-      geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
-      # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
-      coord_cartesian(ylim=c(0, both_max))+
-      labs(y=ylab,x=xlab)+
-      theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-      annotate("text", x = median(total_both$date), y = 0.93 *both_max, label = mytitle, size = 4)
+      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='darkgrey',alpha=0.5) +
+      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='darkgrey',alpha=0.8) +
+      geom_line(aes(y=`50%`),color='black') +
+      geom_col(data = data_df, aes(x = date, y=reported, fill = disease), alpha = 1., inherit.aes = FALSE) +
+      coord_cartesian(ylim=c(0, both_max)) +
+      labs(y=ylab,x=xlab) +
+      theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
+      annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4)
+
+    # pl[[combined_names[ip]]] <- ggplot(data=total_both,
+    #                                    mapping=aes(x=date))+
+    #   geom_line(aes(y=`50%`),color=mycolor)+
+    #   geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
+    #   geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
+    #   geom_point(aes(y=reported),color='black', alpha = 0.5,size=0.5)+
+    #   geom_point(aes(y=reported_fit),color='black', alpha = 1.,size=0.5)+
+    #   geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
+    #   # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
+    #   coord_cartesian(ylim=c(0, both_max))+
+    #   labs(y=ylab,x=xlab)+
+    #   theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
+    #   annotate("text", x = median(total_both$date), y = 0.93 *both_max, label = mytitle, size = 4)
 
   }
 
@@ -877,7 +925,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
   ntraj = 1000
 
-  if (is.null(nfrcst)) nfrcst = 35
+  if (is.null(nfrcst)) nfrcst = 28
 
   npath = length(diseases)
 
@@ -886,6 +934,8 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
   pl = simdat_list = dates_frcst_list = total_list = list()
 
   forecast_traj = list()
+
+  reported_list = reported_fit_list = list()
 
   # loop on all diseases
   for (ip in 1:npath) {
@@ -981,6 +1031,15 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     total_list[[disease]] = total
 
+    total = as.data.frame(total)
+
+    reported_list[[disease]] = reported
+    reported_fit_list[[disease]] = reported_fit
+
+    copy_total = total
+
+    total[1:length(obs_fit), c('2.5%','25%','50%','75%','97.5%')] <- NA
+
     if (cadence == 1) cadence_lab = 'Daily'
     if (cadence == 7) cadence_lab = 'Weekly'
 
@@ -1005,18 +1064,30 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
       y = c(0, max(total[,"97.5%"]))  # Specify the y-coordinate range (adjust as needed)
     )
 
-    pl[[disease]] <- ggplot(data=total,
-                                             mapping=aes(x=date))+
-                                        geom_line(aes(y=`50%`),color=mycolor)+
-                                        geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
-                                        geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
-                                        geom_point(aes(y=reported),color='black', alpha = 0.5, size = 0.5)+
-                                        geom_point(aes(y=reported_fit),color='black', alpha = 1., size = 0.5)+
-                                        geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
-                                        # geom_vline(xintercept = total$date[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
-                                        labs(y=ylab,x=xlab) + #,title=mytitle)+
-                                        theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-                                        annotate("text", x = median(total$date), y = 0.93*max(total[,"97.5%"]), label = mytitle, size = 4)
+    pl[[disease]] <- ggplot(data=total,aes(x=date))+
+                                        # geom_col(aes(y=reported_fit), fill = mycolor, alpha = 1.) +
+                                        geom_col(aes(y=reported), fill = mycolor, alpha = 1.) +
+                                        # geom_col(aes(y=reported), stat = "identity", fill = default_colors[(ip)], alpha = 0.4) +
+                                        geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='darkgrey',alpha=0.5)+
+                                        geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='darkgrey',alpha=0.8)+
+                                        geom_line(aes(y=`50%`),color='black')+
+                                        # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
+                                        labs(y=ylab,x=xlab) +
+                                        theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
+                                        annotate("text", x = median(total$date), y = 0.93*max(total[,c('reported',"97.5%")], na.rm=TRUE), label = mytitle, size = 4)
+
+    # pl[[disease]] <- ggplot(data=total,
+    #                                          mapping=aes(x=date))+
+    #                                     geom_line(aes(y=`50%`),color=mycolor)+
+    #                                     geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
+    #                                     geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
+    #                                     geom_point(aes(y=reported),color='black', alpha = 0.5, size = 0.5)+
+    #                                     geom_point(aes(y=reported_fit),color='black', alpha = 1., size = 0.5)+
+    #                                     geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
+    #                                     # geom_vline(xintercept = total$date[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
+    #                                     labs(y=ylab,x=xlab) + #,title=mytitle)+
+    #                                     theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
+    #                                     annotate("text", x = median(total$date), y = 0.93*max(total[,"97.5%"]), label = mytitle, size = 4)
 
   } #end of loop over diseases
 
@@ -1033,6 +1104,10 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
   cat("Combining Forecasts \n")
 
   combined_frcst <- combine_forecasts(prof_data, dates_frcst_list, simdat_list)
+
+  obs_each_list = combined_frcst$obs_each_list
+
+  obs_fit_each_list = combined_frcst$obs_fit_each_list
 
   simdat_both = combined_frcst$simdat_both
 
@@ -1065,6 +1140,17 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     both_max = max(both_max, round(max(simdat_both[[ip]])))
   }
 
+  # create a long data-frame with the reported values for both pathogens
+  data_df_list = list()
+
+  for (ip in 1:npath) {
+
+    data_df_list[[ip]] = data.frame(date = as.Date(dates_both, format = '%Y-%m-%d'),disease = rep(disease_list[[ip]], length(dates_both)),
+                                    reported = c(obs_each_list[[ip]], rep(NA, length(dates_both)-length(obs_both))))
+  }
+  data_df = rbind(data_df_list[[1]], data_df_list[[2]])
+
+
   for (ip in 1:length(combined_names)) {
 
     apply(simdat_both[[ip]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
@@ -1082,6 +1168,9 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
                      reported_fit = c(obs_fit_both, rep(NA, length(dates_both)-length(obs_fit_both))))
 
     total_list[[combined_names[ip]]] = total_both
+
+    copy_total_both = total_both
+    total_both[1:length(obs_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
 
     mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
 
@@ -1101,18 +1190,31 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     )
 
     pl[[combined_names[ip]]] <- ggplot(data=total_both,
-                                                        mapping=aes(x=date))+
-                                                   geom_line(aes(y=`50%`),color=mycolor)+
-                                                   geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
-                                                   geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
-                                                   geom_point(aes(y=reported),color='black', alpha = 0.5,size=0.5)+
-                                                   geom_point(aes(y=reported_fit),color='black', alpha = 1.,size=0.5)+
-                                                   geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
-                                                   # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
-                                                   coord_cartesian(ylim=c(0, both_max))+
-                                                   labs(y=ylab,x=xlab)+
-                                                    theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-                                                    annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4)
+                                       mapping=aes(x=date))+
+    geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='darkgrey',alpha=0.5) +
+      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='darkgrey',alpha=0.8) +
+      geom_line(aes(y=`50%`),color='black') +
+      geom_col(data = data_df, aes(x = date, y=reported, fill = disease), alpha = 1., inherit.aes = FALSE) +
+      coord_cartesian(ylim=c(0, both_max)) +
+      labs(y=ylab,x=xlab) +
+      theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
+      annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4, legend.position = "none")
+      # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
+
+
+    # pl[[combined_names[ip]]] <- ggplot(data=total_both,
+    #                                                     mapping=aes(x=date))+
+    #                                                geom_line(aes(y=`50%`),color=mycolor)+
+    #                                                geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
+    #                                                geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
+    #                                                geom_point(aes(y=reported),color='black', alpha = 0.5,size=0.5)+
+    #                                                geom_point(aes(y=reported_fit),color='black', alpha = 1.,size=0.5)+
+    #                                                geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
+    #                                                # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
+    #                                                coord_cartesian(ylim=c(0, both_max))+
+    #                                                labs(y=ylab,x=xlab)+
+    #                                                 theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
+    #                                                 annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4)
 
   }
 

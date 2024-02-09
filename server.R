@@ -60,9 +60,9 @@ server <- function(input, output, session) {
       })
 
       output$plot2 <- renderPlotly({
-        plot1 <- plot_ly(mydata[[2]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['influenza']]),
+        plot2 <- plot_ly(mydata[[2]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['influenza']]),
                          marker = list(color=mycolor_list[['influenza']]))
-        layout(plot1, title = mytitle[[2]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+        layout(plot2, title = mytitle[[2]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
                hovermode = "x unified")
       })
 
