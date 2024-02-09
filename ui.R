@@ -77,7 +77,7 @@ ui <- navbarPage(
                h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
                h4("Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
                The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
-               for an update if needed. You can proceed to the Fitting tab only after the data download is completed. Explore the data by hovering over it.
+               for an update if needed. You can proceed to the Fitting tab only after plotting is completed. Explore the data by hovering over it.
                   You can save the incidence data to your computer."),
                hr(),
                fluidRow(
@@ -329,7 +329,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                htmlOutput("loading_message_4"),
                plotlyOutput("plot5"),
                br(),
-               h4("Black circles are reported data, line and shaded areas are the median, 50% and 95% confidence intervals."),
+               h4("Red/green bars are reported COVID-19/Influenza data, line and shaded areas are the median, 50% and 95% confidence intervals."),
                tags$head(
                  tags$style(
                    HTML("
@@ -375,7 +375,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                br(),
                plotlyOutput("plot6"),
                br(),
-               h4("Black circles are reported data, line and shaded areas are the median, 50% and 95% confidence intervals."),
+               h4("Red/green bars are reported COVID-19/Influenza data, line and shaded areas are the median, 50% and 95% confidence intervals."),
                tags$head(
                  tags$style(
                    HTML("
