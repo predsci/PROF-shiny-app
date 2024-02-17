@@ -448,6 +448,9 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   reported_list = reported_fit_list = list()
 
   # loop on all diseases
+
+  wis_df = list()
+
   for (ip in 1:npath) {
 
     mydata = prof_data[[ip]]
@@ -688,6 +691,24 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     simdat_list[[ip]] = simdat
 
+    # score the forecast if possible
+
+
+    if (length(dates) > length(dates_fit)) {
+      nscore = length(dates) - length(dates_fit)
+      obs_score = obs[(length(obs)-nscore+1):length(obs)]
+      dates_score = dates[(length(obs)-nscore+1):length(obs)]
+
+      # find the subset from the model that we are going to score
+      sim_score = simdat[, (length(obs)-nscore+1):length(obs)]
+
+      wis_arr = score_forecast(obs = obs_score, simdat = sim_score)
+
+      wis_df[[disease]] = data.frame(date=dates_score, wis = wis_arr, disease = disease, model = 'mech')
+
+    }
+
+
     npad = nfrcst - length(obs)
     if (npad > 0) {
       reported = c(obs, rep(NA, npad))
@@ -740,7 +761,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       ylab=""
     }
 
-    mycolor = mycolor_list[[disease]]
+    mycolor = mycolor_list_with_transparency[[disease]]
     mytitle = paste0(reg_name,' - ', toupper(disease), ' Mechanistic Model')
 
     start_year = lubridate::year(range(dates)[1])
@@ -757,37 +778,32 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       # geom_col(aes(y=reported_fit), fill = mycolor, alpha = 1.) +
       geom_col(aes(y=reported), fill = mycolor, alpha = 1.) +
       # geom_col(aes(y=reported), stat = "identity", fill = default_colors[(ip)], alpha = 0.4) +
-      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='darkgrey',alpha=0.5)+
-      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='darkgrey',alpha=0.8)+
+      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='blue',alpha=0.5)+
+      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='blue',alpha=0.8)+
       geom_line(aes(y=`50%`),color='black')+
       # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
       labs(y=ylab,x=xlab) +
       theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
       annotate("text", x = median(total$date), y = 0.93*max(total[,c('reported',"97.5%")], na.rm=TRUE), label = mytitle, size = 4)
 
-    # pl[[disease]] <- ggplot(data=total,
-    #                         mapping=aes(x=date))+
-    #   geom_line(aes(y=`50%`),color=mycolor)+
-    #   geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
-    #   geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
-    #   geom_point(aes(y=reported),color='black', alpha = 0.5, size = 0.5)+
-    #   geom_point(aes(y=reported_fit),color='black', alpha = 1., size = 0.5)+
-    #   geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
-    #   # geom_vline(xintercept = total$date[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
-    #   labs(y=ylab,x=xlab) + #,title=mytitle)+
-    #   theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-    #   annotate("text", x = median(total$date), y = 0.93 *max(total[,"97.5%"]), label = mytitle, size = 4)
 
   } #end of loop over diseases
 
   interactive_plot <- list()
+
+  if (length(wis_df) != 0) {
+    long_df = bind_rows(wis_df)
+  } else {
+    long_df = NULL
+  }
+
 
   # if only a single pathogen was selected - create plot and return
 
   if (npath == 1) {
     interactive_plot[[1]] <- ggplotly(pl[[1]])
     arrange_plot <- interactive_plot[[1]]
-    return(list(arrange_plot = arrange_plot, total_list = total_list))
+    return(list(arrange_plot = arrange_plot, total_list = total_list, wis_df = long_df))
   }
 
   # If more than one pathogen
@@ -862,7 +878,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     total_list[[combined_names[[ip]]]] = total_both
 
     copy_total_both = total_both
-    total_both[1:length(obs_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
+    total_both[1:length(obs_fit_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
 
     mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
 
@@ -874,7 +890,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     }
 
     xlab = paste0(start_year,' - ', end_year)
-    mycolor = mycolor_list[['combined']]
+    mycolor = mycolor_list_with_transparency[['combined']]
 
     vertical_line <- data.frame(
       x = dates[ntimes],  # Specify the x-coordinate where the vertical line should be
@@ -883,28 +899,15 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     pl[[combined_names[ip]]] <- ggplot(data=total_both,
                                        mapping=aes(x=date))+
-      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='darkgrey',alpha=0.5) +
-      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='darkgrey',alpha=0.8) +
+      geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='blue',alpha=0.5) +
+      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='blue',alpha=0.8) +
       geom_line(aes(y=`50%`),color='black') +
-      geom_col(data = data_df, aes(x = date, y=reported, fill = disease), alpha = 1., inherit.aes = FALSE) +
+      geom_col(data = data_df, aes(x = date, y=reported, fill = disease), alpha = 0.5, inherit.aes = FALSE) +
       coord_cartesian(ylim=c(0, both_max)) +
       labs(y=ylab,x=xlab) +
       theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
       annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4)
 
-    # pl[[combined_names[ip]]] <- ggplot(data=total_both,
-    #                                    mapping=aes(x=date))+
-    #   geom_line(aes(y=`50%`),color=mycolor)+
-    #   geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
-    #   geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
-    #   geom_point(aes(y=reported),color='black', alpha = 0.5,size=0.5)+
-    #   geom_point(aes(y=reported_fit),color='black', alpha = 1.,size=0.5)+
-    #   geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
-    #   # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
-    #   coord_cartesian(ylim=c(0, both_max))+
-    #   labs(y=ylab,x=xlab)+
-    #   theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-    #   annotate("text", x = median(total_both$date), y = 0.93 *both_max, label = mytitle, size = 4)
 
   }
 
@@ -916,7 +919,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
                           nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
-  return(list(arrange_plot = arrange_plot, total_list = total_list))
+  return(list(arrange_plot = arrange_plot, total_list = total_list, wis_df = long_df))
 
 }
 
@@ -936,6 +939,8 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
   forecast_traj = list()
 
   reported_list = reported_fit_list = list()
+
+  wis_df = list()
 
   # loop on all diseases
   for (ip in 1:npath) {
@@ -984,7 +989,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     obs = mydata$data$inc
 
-    # obs may not have the sam start date as obs_fit hence need to trim
+    # obs may not have the same start date as obs_fit hence need to trim
     keep_ind = which(mydata$data$date >= dates_fit[1])
 
     obs = obs[keep_ind]
@@ -997,6 +1002,23 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     simdat = stat_forecast(mydata, ntraj, nfrcst)
 
     simdat_list[[ip]] = simdat
+
+    # we can score the forecast dates are not the same as mydata$data_fit_stat$date
+    #
+
+    if (length(dates) > length(dates_fit)) {
+      nscore = length(dates) - length(dates_fit)
+      obs_score = obs[(length(obs)-nscore+1):length(obs)]
+      dates_score = dates[(length(obs)-nscore+1):length(obs)]
+
+      # find the subset from the model that we are going to score
+      sim_score = simdat[, (length(obs)-nscore+1):length(obs)]
+
+      wis_arr = score_forecast(obs = obs_score, simdat = sim_score)
+
+      wis_df[[disease]] = data.frame(date=dates_score, wis = wis_arr, disease = disease, model = 'stat')
+
+    }
 
     npad = nfrcst - length(obs)
     if (npad > 0) {
@@ -1052,7 +1074,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     }
     xlab = ''
 
-    mycolor = mycolor_list[[disease]]
+    mycolor = mycolor_list_with_transparency[[disease]]
 
     mytitle = paste0(reg_name,' - ', toupper(disease), ' Statistical Baseline Model')
 
@@ -1065,38 +1087,31 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     )
 
     pl[[disease]] <- ggplot(data=total,aes(x=date))+
-                                        # geom_col(aes(y=reported_fit), fill = mycolor, alpha = 1.) +
                                         geom_col(aes(y=reported), fill = mycolor, alpha = 1.) +
-                                        # geom_col(aes(y=reported), stat = "identity", fill = default_colors[(ip)], alpha = 0.4) +
-                                        geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='darkgrey',alpha=0.5)+
-                                        geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='darkgrey',alpha=0.8)+
+                                        geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='blue',alpha=0.5)+
+                                        geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='blue',alpha=0.8)+
                                         geom_line(aes(y=`50%`),color='black')+
-                                        # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
                                         labs(y=ylab,x=xlab) +
                                         theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
                                         annotate("text", x = median(total$date), y = 0.93*max(total[,c('reported',"97.5%")], na.rm=TRUE), label = mytitle, size = 4)
 
-    # pl[[disease]] <- ggplot(data=total,
-    #                                          mapping=aes(x=date))+
-    #                                     geom_line(aes(y=`50%`),color=mycolor)+
-    #                                     geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
-    #                                     geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
-    #                                     geom_point(aes(y=reported),color='black', alpha = 0.5, size = 0.5)+
-    #                                     geom_point(aes(y=reported_fit),color='black', alpha = 1., size = 0.5)+
-    #                                     geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
-    #                                     # geom_vline(xintercept = total$date[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
-    #                                     labs(y=ylab,x=xlab) + #,title=mytitle)+
-    #                                     theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-    #                                     annotate("text", x = median(total$date), y = 0.93*max(total[,"97.5%"]), label = mytitle, size = 4)
+
 
   } #end of loop over diseases
+
+
+  if (length(wis_df) !=0) {
+    long_df = bind_rows(wis_df)
+  } else {
+    long_df = NULL
+  }
 
 
   if (npath == 1) {
     interactive_plot <- list()
     interactive_plot[[1]] <- ggplotly(pl[[1]])
     arrange_plot <- interactive_plot[[1]]
-    return(list(arrange_plot = arrange_plot, total_list = total_list))
+    return(list(arrange_plot = arrange_plot, total_list = total_list, wis_df = long_df))
   }
 
 
@@ -1150,7 +1165,6 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
   }
   data_df = rbind(data_df_list[[1]], data_df_list[[2]])
 
-
   for (ip in 1:length(combined_names)) {
 
     apply(simdat_both[[ip]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
@@ -1170,7 +1184,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     total_list[[combined_names[ip]]] = total_both
 
     copy_total_both = total_both
-    total_both[1:length(obs_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
+    total_both[1:length(obs_fit_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
 
     mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
 
@@ -1182,39 +1196,25 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     }
 
     xlab = paste0(start_year,' - ', end_year)
-    mycolor = mycolor_list[['combined']]
+    mycolor =mycolor_list_with_transparency[['combined']]
 
     vertical_line <- data.frame(
       x = dates[ntimes],  # Specify the x-coordinate where the vertical line should be
       y = c(0, both_max)  # Specify the y-coordinate range (adjust as needed)
     )
 
-    pl[[combined_names[ip]]] <- ggplot(data=total_both,
+
+    pl[[combined_names[ip]]] <- ggplot(data=data_df,
                                        mapping=aes(x=date))+
-    geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='darkgrey',alpha=0.5) +
-      geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='darkgrey',alpha=0.8) +
-      geom_line(aes(y=`50%`),color='black') +
-      geom_col(data = data_df, aes(x = date, y=reported, fill = disease), alpha = 1., inherit.aes = FALSE) +
+      geom_col(aes(y=reported, fill = disease, alpha = 0.5), alpha = 0.5) +
+      geom_ribbon(data=total_both, aes(x=date, ymin=`2.5%`,ymax=`97.5%`),fill='blue',alpha=0.5, inherit.aes = FALSE) +
+       geom_ribbon(data=total_both, aes(x=date, ymin=`25%`,ymax=`75%`),fill='blue',alpha=0.8, inherit.aes = FALSE) +
+       geom_line(data=total_both, aes(x= date, y=`50%`),color='black',  inherit.aes = FALSE) +
       coord_cartesian(ylim=c(0, both_max)) +
       labs(y=ylab,x=xlab) +
       theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
-      annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4, legend.position = "none")
-      # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
+      annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4)
 
-
-    # pl[[combined_names[ip]]] <- ggplot(data=total_both,
-    #                                                     mapping=aes(x=date))+
-    #                                                geom_line(aes(y=`50%`),color=mycolor)+
-    #                                                geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill=mycolor,alpha=0.2)+
-    #                                                geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill=mycolor,alpha=0.4)+
-    #                                                geom_point(aes(y=reported),color='black', alpha = 0.5,size=0.5)+
-    #                                                geom_point(aes(y=reported_fit),color='black', alpha = 1.,size=0.5)+
-    #                                                geom_line(data = vertical_line, aes(x = x, y = y), color = 'grey30', linetype = 'dashed') +
-    #                                                # geom_vline(xintercept = dates[ntimes], linetype = "dashed", color = "cornflowerblue", size = 1.5) +
-    #                                                coord_cartesian(ylim=c(0, both_max))+
-    #                                                labs(y=ylab,x=xlab)+
-    #                                                 theme(plot.title = element_text(hjust = 0.5, vjust = 0.7)) +
-    #                                                 annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4)
 
   }
 
@@ -1230,8 +1230,55 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
                             nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
-  return(list(arrange_plot = arrange_plot, total_list = total_list))
+  return(list(arrange_plot = arrange_plot, total_list = total_list, wis_df = long_df))
 
+}
+
+shiny_plot_wis <- function(wis_data, loc = NA) {
+
+  wis_name = names(wis_data)
+  nwis = length(wis_name)
+  
+  if (nwis == 1){
+    wis_df = wis_data[[wis_name[1]]]
+  } else {
+    wis_df = bind_rows(wis_data)
+  }
+
+  pl = list()
+
+  mydiseases= unique(wis_df$disease)
+  
+  wis_df$wis = round(wis_df$wis, 2)
+  
+
+  for (jj in 1:length(mydiseases)) {
+    mydisease = mydiseases[jj]
+    data = subset(wis_df, disease == mydisease)
+    title = paste0(toupper(loc), ' WIS SCORE ')
+    pl[[jj]] <- ggplot(data, aes(x = date, y = wis, fill = model)) +
+      geom_bar(stat = "identity", position = "dodge") +
+      annotate("text", x = data$date[2], y = max(data$wis)*0.9, label = toupper(mydisease), size = 5) +
+      labs(title = title,
+           x = "Date",
+           y = "WIS Score",
+           fill = "Model")
+
+  }
+
+  if (length(pl) == 1) {
+    interactive_plot <- list()
+    interactive_plot[[1]] <- ggplotly(pl[[1]])
+    arrange_plot <- interactive_plot[[1]]
+    return(list(arrange_plot = arrange_plot, wis_df = wis_df))
+  }
+
+  if (length(pl) == 2)
+    arrange_plot <- subplot(pl[[1]], pl[[2]],
+                            nrows = 2, titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE, margin = c(0.02, 0.02, 0.1, 0.07))
+  # Render the plot
+
+  return(list(arrange_plot = arrange_plot, wis_df = wis_df))
 }
 
 

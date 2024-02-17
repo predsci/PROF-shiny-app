@@ -3,13 +3,13 @@ if(!require(pacman)){
   install.packages("pacman")
 }
 required_packages <- c('shiny','shinyjs','shinythemes','dplyr','ggplot2','plotly',
-                       'lubridate','deSolve','PROF')
+                       'lubridate','deSolve','PROF','scoringutils')
 
 pacman::p_load(required_packages, character.only = TRUE)
 
 # date of update
 
-date_updated = "February 2, 2024"
+date_updated = "February 16, 2024"
 
 # locations
 loc_abbv <- loc_pops$abbreviation
@@ -22,6 +22,11 @@ loc_abbv <- loc_abbv[-ind]
 loc_name <- loc_name[-ind]
 
 year_data <- c(2021, 2022, 2023)
+year_label <- c('2021-22', '2022-23', '2023-24')
+year_list <- as.list(year_data)
+
+names(year_list) <- year_label
+
 nyear <- length(year_data)
 
 # Define default end dates for fitting
@@ -40,4 +45,22 @@ flu_start_fit_date_max <- c(as.Date('2021-11-15'), as.Date('2022-11-15'),as.Date
 mycolor_list <- list('covid19' = "#F8766D", 'influenza'= "#00BFC4",
                       'combined' = "#CC79A7") #= "#D55E00",
 
+# Function to add transparency to colors
+add_transparency <- function(color, alpha) {
+  # Convert hexadecimal color code to RGB format
+  rgb_vals <- col2rgb(color) / 255
+
+  # Append alpha value
+  rgb_vals <- c(rgb_vals, alpha)
+
+  # Convert back to hexadecimal format
+  rgba_color <- rgb(rgb_vals[1], rgb_vals[2], rgb_vals[3], alpha = rgb_vals[4])
+
+  return(rgba_color)
+}
+
+# Transparency values (adjust as needed)
+alpha_values <- c(0.5, 0.5, 0.8)
+
+mycolor_list_with_transparency <- Map(add_transparency, mycolor_list, alpha_values)
 

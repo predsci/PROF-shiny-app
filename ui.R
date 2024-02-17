@@ -75,10 +75,10 @@ ui <- navbarPage(
     tabPanel("1. Explore Incidence",
              fluidPage(
                h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
-               h4("Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
-               The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
-               for an update if needed. You can proceed to the Fitting tab only after plotting is completed. Explore the data by hovering over it.
-                  You can save the incidence data to your computer."),
+               h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
+               for an update if needed. Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
+                You can proceed to the Fitting tab only after plotting is completed. Explore the data by hovering over it.
+                  You can save the incidence data and the plots to your computer."),
                hr(),
                fluidRow(
                  br(),
@@ -93,7 +93,7 @@ ui <- navbarPage(
                br(),
                column(6, selectInput("location", "Select Location:", choices = loc_abbv, selected = 'CA')),
                # column(2,""),
-               column(6,selectInput("season", "Select Season:", choices = year_data, selected = 2023)),
+               column(6,selectInput("season", "Select Season:", choices = year_list, selected = 2023)),
                # column(4,""),
                column(6,actionButton("plotDataButton", "Plot Incidence Data")),
                column(3,""),
@@ -154,6 +154,7 @@ ui <- navbarPage(
     ), # End of Incidence Panel
 
 tabPanel("2. Fit Incidence", # The Fitting Tab has the Mechanistic and Statistical tabs under it.
+         h4("The Mechanistic Model takes about 10-15 minutes to run. During this time, you cannot make any changes or new selections. The Statistical model is nearly instantaneous."),
 tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
@@ -188,7 +189,7 @@ tabsetPanel(
                hr(style = "clear: both;"),
                column(12,dateInput("select_end_fit", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[nyear],
                                       value = end_fit_date_max[nyear],format = "yyyy-mm-dd")),
-               h4("By default we fit all available data. If you select to fit only part of the data, you can compare the reported data to the forecast (See Forecast Tab)."),
+               h4("By default, we fit all available data. If you would like to evaluate the forecast quality by comparing it to reported data, please select an earlier end-date for the fit. Please note that the choice you make here for the fit end-date determines the start date of the forecast, and if you change your mind about this date, you will have to re-run the calculation which takes about 10-15 minutes."),
                # Custom JavaScript to center the dateInput
                tags$script(HTML("
       $(document).ready(function() {
@@ -261,9 +262,9 @@ tabsetPanel(
                )),
                br(),
                hr(style = "clear: both;"),
-               column(12, dateInput("select_end_fit_stat", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[1],
-                                    value = end_fit_date_max[1],format = "yyyy-mm-dd")),
-               h4("By default we fit all available data. If you select to fit only part of the data, you can compare the reported data to the forecast (See Forecast Tab)."),
+               column(12, dateInput("select_end_fit_stat", "Select End Date For Fitting: ", min = end_fit_date_min[nyear], max= end_fit_date_max[nyear],
+                                    value = end_fit_date_max[nyear],format = "yyyy-mm-dd")),
+               h4("By default, we fit all available data. If you would like to evaluate the forecast quality by comparing it to reported data, please select an earlier fit end-date. Please note that the choice you make here for the fit end-date determines the start date of the forecast, and if you change your mind about this date, you will have to re-run the calculation. For the statistical model, this process is nearly instantaneous."),
                tags$script(HTML("
                 $(document).ready(function() {
                 $('#select_end_fit').parent().css('display', 'flex');
@@ -280,7 +281,7 @@ tabsetPanel(
                br(),
                plotlyOutput("plot4"),
                br(),
-               h4("Black circles are reported data, line and shaded areas are the median, 50% and 95% confidence intervals."),
+               h4("Black circles are reported data, line and shaded areas are the median, and quantiles corresponding to the 50% and 95% intervals."),
               tags$head(
                 tags$style(
                   HTML("
@@ -329,7 +330,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                htmlOutput("loading_message_4"),
                plotlyOutput("plot5"),
                br(),
-               h4("Red/green bars are reported COVID-19/Influenza data, line and shaded areas are the median, 50% and 95% confidence intervals."),
+               h4("Red/green bars are reported COVID-19/Influenza data, line and shaded areas are the median, and quantiles corresponding to the 50% and 95% intervals."),
                tags$head(
                  tags$style(
                    HTML("
@@ -375,7 +376,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                br(),
                plotlyOutput("plot6"),
                br(),
-               h4("Red/green bars are reported COVID-19/Influenza data, line and shaded areas are the median, 50% and 95% confidence intervals."),
+               h4("Red/green bars are reported COVID-19/Influenza data, line and shaded areas are the median, and quantiles corresponding to the 50% and 95% intervals."),
                tags$head(
                  tags$style(
                    HTML("
@@ -401,8 +402,51 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
              ),
              downloadButton("dlFrcstStat", "Save Plots Data"),
              h4("Statistical model results can be saved after plots are made.")
-    )
-    )
+    ),
+    tabPanel('Evaluate Forecast',
+             fluidPage(
+               h2("Evaluating Retrospective Forecasts"),
+               h4("We assess the accuracy of PROF’s probabilistic forecasts by employing the weighted interval score [1] as implemented in the scoringutils R package [2]. Smaller values of the WIS indicate forecasts that are more aligned with observations. The evaluation of the WIS uses daily data (and forecasts) and the same quantiles as mandated by the CDC FluSight Challenge. The weighted interval score can be evaluted only for retrospective forecasts."),
+
+
+               hr(),
+               br(),
+               # uiOutput("wis_button"),
+               column(12,actionButton("wis_button", "Evaluate WIS")),
+               br(),
+               br(),
+               br(),
+               plotlyOutput("wis_plot"),
+               tags$head(
+                 tags$style(
+                   HTML("
+            #wis_plot {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #wis_plot.fading {
+              opacity: 0.2;
+            }
+          ")
+                 )
+               ),tags$script(
+                 HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#wis_plot').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#wis_plot').removeClass('fading');
+          });
+        ")
+               ),
+               br(),
+               h4("We evaluate the WIS score using all data and all forecasts. Each pathogen is displayed in a different panel and different colors
+                  are used to indicate different models, see legend."),
+               br(),
+               p("1. Evaluating epidemics forecasts in interval format, Bracher J, Ray EL, Gneiting T and Reich NG, ", tags$a(href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008618","PLoS Comput Biol 17(2): e1008618")),
+               p("2. R package", tags$a(href="https://cran.r-project.org/web/packages/scoringutils/index.html", "scoringutils"))
+             ))
+    ),
+    downloadButton("dlWIS", "Save WIS Data")
     ),
 tabPanel("About",
          fluidPage(

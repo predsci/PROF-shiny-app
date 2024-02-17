@@ -12,6 +12,8 @@ server <- function(input, output, session) {
 
   dates_data <- reactiveValues(data = NULL)
 
+  shared_wis  <- reactiveValues(data = NULL)
+
   download_trigger <- reactiveValues(num=0)
 
   # Observe button click for Tab 1
@@ -146,8 +148,22 @@ server <- function(input, output, session) {
      my_year = year(my_data$data$date[1])
      ndate = length(my_data$data$date)
      ind = which(year_data == my_year)
-     updateDateInput(session, "select_end_fit",min = end_fit_date_min[ind] , max = my_data$data$date[ndate], value = my_data$data$date[ndate])
-     updateDateInput(session, "select_end_fit_stat",min = end_fit_date_min[ind] , max = my_data$data$date[ndate], value = my_data$data$date[ndate])
+
+     if (length(input$select_end_fit_stat) == 0) {
+       end_fit_stat = my_data$data$date[ndate]
+     } else {
+       end_fit_stat = input$select_end_fit_stat
+     }
+
+     if (length(input$select_end_fit) == 0) {
+       end_fit = my_data$data$date[ndate]
+     } else {
+       end_fit = input$select_end_fit
+     }
+
+
+     updateDateInput(session, "select_end_fit",min = end_fit_date_min[ind] , max = my_data$data$date[ndate], value = end_fit)
+      updateDateInput(session, "select_end_fit_stat",min = end_fit_date_min[ind] , max = my_data$data$date[ndate], value = end_fit_stat)
      # updateDateInput(session, "cov_start_fit",min = cov_start_fit_date_min[ind] , max = cov_start_fit_date_max[ind], value = cov_start_fit_date_min[ind])
      # updateDateInput(session, "flu_start_fit",min = flu_start_fit_date_min[ind] , max = flu_start_fit_date_max[ind], value = flu_start_fit_date_min[ind])
      updateSelectInput(session, "location", choices = loc_abbv, selected = input$location)
@@ -284,8 +300,11 @@ server <- function(input, output, session) {
 
     }
 
+
+
     prof_data <-hhs_set_fitdates_stat(prof_data=prof_data, fit_start=fit_start,
                                       fit_end=as.Date(input$select_end_fit_stat))
+
 
     shared_data$data <- prof_data # update shared_data$data to include 'data_fit_stat'
 
@@ -346,12 +365,25 @@ server <- function(input, output, session) {
   })
 
 
+
+
   # Observe button click for Tab 4
   observeEvent(input$forecastButton, {
 
     prof_data <- shared_data$data
 
     fit_list <- shared_fit$data$fit_list
+    # fit_list will be NULL if a fit was not done before a forecast was requested
+    if (is.null(fit_list)) {
+      text <- 'For a Mechanistic Forecast you nmust\nfirst do a Mechanistic Fit.\nGo to Fit Incidence -> Mechanistic Tab.'
+      output$plot5 <- renderPlotly({
+        ggplot() +
+          annotate("text", x = 0.5, y = 0.5, label = text, size = 10, color = "red", hjust = 0.5, vjust = 0.5)
+        })
+
+    } else {
+      
+   
     par_list <- shared_par$data
 
     disease <- input$disease
@@ -390,6 +422,12 @@ server <- function(input, output, session) {
       if (!is.null(prof_data))
         shiny_plot_forecast(prof_data = prof_data[diseases], par_list, fit_list, ntraj =1000, nfrcst = input$days_frcst)
     })
+
+
+
+    if (length(mech_forecast()) > 0) {
+      shared_wis$data$wis_mech <- mech_forecast()$wis_df
+    }
 
     output$plot5 <- renderPlotly({mech_forecast()$arrange_plot})
 
@@ -434,7 +472,7 @@ server <- function(input, output, session) {
         dlm <- rbind(t, tt, l, df_tot)
         write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
       })
-
+    }
   })
 
   # Observe button click for Tab 5
@@ -456,6 +494,10 @@ server <- function(input, output, session) {
         shiny_plot_stat_forecast(prof_data = prof_data, diseases = diseases, nfrcst = input$days_frcst_stat)
     })
 
+
+    if (length(stat_forecast()) > 0) {
+      shared_wis$data$wis_stat <- stat_forecast()$wis_df
+    }
 
     output$plot6 <- renderPlotly({stat_forecast()$arrange_plot})
 
@@ -504,6 +546,78 @@ server <- function(input, output, session) {
       })
 
   })
+
+
+
+
+  observeEvent(input$wis_button, {
+
+    if (!is.null(shared_wis$data)) {
+      wis_names = names(shared_wis$data)
+      all_null <- all(sapply(wis_names, is.null))
+      if (all_null) {
+        reactive_value = FALSE
+      } else {
+        reactive_value = TRUE
+      }
+    } else {
+      reactive_value = FALSE
+    }
+
+    text <- 'Forecast WIS cannot be evaluated.\nThere is not yet observed data\nfor the forecasted time range.'
+
+    # data <- data.frame(x = numeric(0), y = numeric(0))
+
+    if (reactive_value) {
+      wis_data = shared_wis$data
+
+      state_abbv=input$location
+
+      wis_output<- shiny_plot_wis(wis_data, state_abbv)
+      
+      wis_df <- wis_output$wis_df
+      # Render the plot
+      output$wis_plot <- renderPlotly({
+        wis_output$arrange_plot
+      })
+
+      wis_df$metric = rep('wis', nrow(wis_df))
+      wis_df$loc_abbv = rep(state_abbv, nrow(wis_df))
+      
+    } else {
+      
+      output$wis_plot <- renderPlotly({
+        ggplot() +
+          annotate("text", x = 0.5, y = 0.5, label = text, size = 10, color = "red", hjust = 0.5, vjust = 0.5)
+      })
+      
+      wis_df = NULL
+    }
+
+    output$dlWIS <- downloadHandler(
+      
+      filename = function() { paste(state_abbv,"_wis_",Sys.Date(),'.csv', sep='') },
+      
+      content = function(file) {
+        
+        # Title
+        t <- c(paste("WIS for ", state_abbv,'Hospitalization data', sep = " "),"","","","","")
+        #Subtitle
+        tt <-  c(paste("Data Fitted and Forecasted on",Sys.Date(), sep = " "),"","","","","")
+        #Column labels
+        l <- c('date','value','disease','model','metric','loc_abbv')
+
+        df_tot = wis_df
+        df_tot[] <- lapply(df_tot, as.character)
+        
+        dlm <- rbind(t, tt, l, df_tot)
+        write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
+      })
+
+
+
+  })
+
 
 
 }
