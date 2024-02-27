@@ -154,7 +154,7 @@ ui <- navbarPage(
     ), # End of Incidence Panel
 
 tabPanel("2. Fit Incidence", # The Fitting Tab has the Mechanistic and Statistical tabs under it.
-         h4("The Mechanistic Model takes about 10-15 minutes to run. During this time, you cannot make any changes or new selections. The Statistical model is nearly instantaneous."),
+         h4("The Mechanistic Model takes about 10-15 minutes to run. During this time, you cannot make any changes or new selections. The Statistical model is nearly instantaneous. If you would like to evaluate a Forecast you must select an end-date that is prior to the end of the data stream and we strongly recommed using the same end-date for both Mechanistic and Statistical Fitting."),
 tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
@@ -189,7 +189,7 @@ tabsetPanel(
                hr(style = "clear: both;"),
                column(12,dateInput("select_end_fit", "Select End Date For Fitting: ", min = end_fit_date_min[1], max= end_fit_date_max[nyear],
                                       value = end_fit_date_max[nyear],format = "yyyy-mm-dd")),
-               h4("By default, we fit all available data. If you would like to evaluate the forecast quality by comparing it to reported data, please select an earlier end-date for the fit. Please note that the choice you make here for the fit end-date determines the start date of the forecast, and if you change your mind about this date, you will have to re-run the calculation which takes about 10-15 minutes."),
+               h4("By default, we fit all available data. If you would like to evaluate the forecast quality by comparing it to reported data, please select an earlier end-date for the fit. Please note that the choice you make here for the fit end-date determines the start date of the forecast, and if you change your mind about this date, you will have to re-run the calculation which takes about 10-15 minutes. We strongly recommed using the same end-date for both Mechanistic and Statistical Fitting."),
                # Custom JavaScript to center the dateInput
                tags$script(HTML("
       $(document).ready(function() {
@@ -264,7 +264,7 @@ tabsetPanel(
                hr(style = "clear: both;"),
                column(12, dateInput("select_end_fit_stat", "Select End Date For Fitting: ", min = end_fit_date_min[nyear], max= end_fit_date_max[nyear],
                                     value = end_fit_date_max[nyear],format = "yyyy-mm-dd")),
-               h4("By default, we fit all available data. If you would like to evaluate the forecast quality by comparing it to reported data, please select an earlier fit end-date. Please note that the choice you make here for the fit end-date determines the start date of the forecast, and if you change your mind about this date, you will have to re-run the calculation. For the statistical model, this process is nearly instantaneous."),
+               h4("By default, we fit all available data. If you would like to evaluate the forecast quality by comparing it to reported data, please select an earlier fit end-date. Please note that the choice you make here for the fit end-date determines the start date of the forecast, and if you change your mind about this date, you will have to re-run the calculation. For the statistical model, this process is nearly instantaneous. We strongly recommed using the same end-date for both Mechanistic and Statistical Fitting."),
                tags$script(HTML("
                 $(document).ready(function() {
                 $('#select_end_fit').parent().css('display', 'flex');
