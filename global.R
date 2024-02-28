@@ -64,3 +64,26 @@ alpha_values <- c(0.5, 0.5, 0.8)
 
 mycolor_list_with_transparency <- Map(add_transparency, mycolor_list, alpha_values)
 
+
+# --- Data Prep --------------------------
+# identify data filename and modified date
+data_file = list.files(path="data", pattern="HHS_daily-hosp_state__[0-9]{12}\\.csv$")
+data_modified_date = filename_timestamp_to_posix(data_file)
+# query HHS dataset modified date
+hhs_data_date = fetch_hhs_last_modified()
+
+if (hhs_data_date > data_modified_date) {
+  cat("Local data file is out-of-date. Attempting to update.\n")
+  down_result = fetch_hhs_data(down_dir="data")
+  if (down_result$out_flag==0) {
+    cat("HHS data file successfully updated.")
+    data_file = down_result$download_path
+  } else {
+    cat("There was a problem with the download. HHS data not updated.")
+    data_file = file.path("data", data_file)
+  }
+} else {
+  data_file = file.path("data", data_file)
+}
+
+

@@ -75,19 +75,20 @@ ui <- navbarPage(
     tabPanel("1. Explore Incidence",
              fluidPage(
                h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
-               h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
-               for an update if needed. Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
+               # h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
+               # for an update if needed. Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
+               h4("Use the Dropdown menus to select a location and a season. When you have completed your selection, click the Plot button.
                 You can proceed to the Fitting tab only after plotting is completed. Explore the data by hovering over it.
                   You can save the incidence data and the plots to your computer."),
-               hr(),
-               fluidRow(
-                 br(),
-                 column(8, h4(htmlOutput(outputId="data_message"))),
-                 column(4, actionButton(inputId="downloadDataButton",
-                                        label="Download Data")),
-                 br(),
-                 htmlOutput("loading_message_1a")
-               ),
+               # hr(),
+               # fluidRow(
+               #   br(),
+               #   column(8, h4(htmlOutput(outputId="data_message"))),
+               #   column(4, actionButton(inputId="downloadDataButton",
+               #                          label="Download Data")),
+               #   br(),
+               #   htmlOutput("loading_message_1a")
+               # ),
                hr(),
              fluidRow(
                br(),
