@@ -75,20 +75,19 @@ ui <- navbarPage(
     tabPanel("1. Explore Incidence",
              fluidPage(
                h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
-               # h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
-               # for an update if needed. Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
-               h4("Use the Dropdown menus to select a location and a season. When you have completed your selection, click the Plot button.
+               h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
+               for an update if needed. Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
                 You can proceed to the Fitting tab only after plotting is completed. Explore the data by hovering over it.
                   You can save the incidence data and the plots to your computer."),
-               # hr(),
-               # fluidRow(
-               #   br(),
-               #   column(8, h4(htmlOutput(outputId="data_message"))),
-               #   column(4, actionButton(inputId="downloadDataButton",
-               #                          label="Download Data")),
-               #   br(),
-               #   htmlOutput("loading_message_1a")
-               # ),
+               hr(),
+               fluidRow(
+                 br(),
+                 column(8, h4(htmlOutput(outputId="data_message"))),
+                 column(4, actionButton(inputId="downloadDataButton",
+                                        label="Download Data")),
+                 br(),
+                 htmlOutput("loading_message_1a")
+               ),
                hr(),
              fluidRow(
                br(),
@@ -170,8 +169,8 @@ tabsetPanel(
                  condition = "input.disease.indexOf('covid19') !== -1",
                  checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19:",choices  = c("SEIRH"='seirh', "SIRH"='sirh'), inline = TRUE),
                  h5('For COVID-19 we recommend selecting the Sucscptible-Exposed-Infectious-Recovered-Hospitalized option'),
-                 checkboxGroupInput("nb_cov", "Select Number of Values for the time-dependent Force of Infection:", choices = c(3,2), inline = TRUE),
-                 h5('Based on the complexity of the COVID-19 time-series, select either three- or two-values for the time-dependent FOI.'),
+                 checkboxGroupInput("nb_cov", "Select Number of Values for the time-dependent Force of Infection:", choices = c(2,3), inline = TRUE),
+                 h5('We recommend starting with using a two-value FOI and changing to a three-value only if needed.'),
                  dateInput("cov_start_fit", "Select Start Date For Fitting COVID19:", min = cov_start_fit_date_min[nyear], max= cov_start_fit_date_max[nyear],
                            value = cov_start_fit_date_min[nyear],format = "yyyy-mm-dd"),
                  h5('For COVID-19 examine the time-series and decide if to start the fit in the summer or later.')
