@@ -829,7 +829,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   if (npad > 0) {
     reported_both = c(obs_both, rep(NA, npad))
   } else {
-    reported_both = reported_both[1:length(dates_both)]
+    reported_both = obs_both[1:length(dates_both)]
   }
 
   npad_fit = length(dates_both) - length(obs_fit_both)
@@ -837,7 +837,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   if (npad_fit > 0) {
     reported_fit_both = c(obs_fit_both, rep(NA, npad))
   } else {
-    reported_fit_both = reported_fit_both[1:length(dates_both)]
+    reported_fit_both = obs_fit_both[1:length(dates_both)]
   }
 
   combined_names <- c('random', 'sorted')
@@ -1238,7 +1238,7 @@ shiny_plot_wis <- function(wis_data, loc = NA) {
 
   wis_name = names(wis_data)
   nwis = length(wis_name)
-  
+
   if (nwis == 1){
     wis_df = wis_data[[wis_name[1]]]
   } else {
@@ -1248,9 +1248,9 @@ shiny_plot_wis <- function(wis_data, loc = NA) {
   pl = list()
 
   mydiseases= unique(wis_df$disease)
-  
+
   wis_df$wis = round(wis_df$wis, 2)
-  
+
 
   for (jj in 1:length(mydiseases)) {
     mydisease = mydiseases[jj]
