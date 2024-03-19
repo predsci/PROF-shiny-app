@@ -156,7 +156,7 @@ ui <- navbarPage(
              h4("Incidence data can be saved after plots are made.")
              ) # End of fluidPage
     ),
-    tabPanel("Upload Data",
+    tabPanel("User Uploaded Data",
              fluidPage(
                h2("Exploring User Uploaded Data"),
                h4("Please provide the following information: (i) Population size (as an integer; scientific notation is accepted).
