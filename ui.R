@@ -80,7 +80,7 @@ ui <- navbarPage(
              fluidPage(
                h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
                h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
-               for an update if needed. Use the Dropdown menus to select a location and a season. When you completed your selection click the Plot button.
+               for an update if needed. Use the Dropdown menus to select a location and a season. When you complete your selection, click the Plot button.
                 You can proceed to the Fitting tab only after plotting is completed. Explore the data by hovering over it.
                   You can save the incidence data and the plots to your computer."),
                hr(),
@@ -232,16 +232,16 @@ tabPanel("2. Fit Incidence", # The Fitting Tab has the Mechanistic and Statistic
 tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
-               h2("Fitting Mechanistic Compartmetal Models To Data"),
-               h4("Setup a compratmental model for each pathogen. PROF supports two models: Susceptible-Exposed-Infectious-Recovered/Hospitalized (SEIRH)
+               h2("Fitting Mechanistic Compartmental Models To Data"),
+               h4("Setup a compartmental model for each pathogen. PROF supports two models: Susceptible-Exposed-Infectious-Recovered/Hospitalized (SEIRH)
                and Susceptible-Infectious-Recovered/Hospitalized (SIRH). You can proceed to the Forecasting Tab only after the fitting is completed.
-                  You can save the plots data to your computer."),
+                  You can save the plots/data to your computer."),
                hr(),
                column(12,checkboxGroupInput("disease", "Select Pathogens:", choices = c("COVID19"='covid19', "INFLUENZA"='influenza'), inline = TRUE)),
                h4("You can select both pathogens or only one of them. When a pathogen is selected you will be prompted to define the specifics of the compartmental model."),
                column(6,conditionalPanel(
                  condition = "input.disease.indexOf('covid19') !== -1",
-                 checkboxGroupInput("options_cov", "Select Compartmetal Model for COVID19:",choices  = c("SEIRH"='seirh', "SIRH"='sirh'), inline = TRUE),
+                 checkboxGroupInput("options_cov", "Select Compartmental Model for COVID19:",choices  = c("SEIRH"='seirh', "SIRH"='sirh'), inline = TRUE),
                  h5('For COVID-19 we recommend selecting the Sucscptible-Exposed-Infectious-Recovered-Hospitalized option'),
                  checkboxGroupInput("nb_cov", "Select Number of Values for the time-dependent Force of Infection:", choices = c(2,3), inline = TRUE),
                  h5('We recommend starting with using a two-value FOI and changing to a three-value only if needed.'),
@@ -251,10 +251,10 @@ tabsetPanel(
                )),
                 column(6,conditionalPanel(
                  condition = "input.disease.indexOf('influenza') !== -1",
-                 checkboxGroupInput("options_flu", "Select Compartmetal Model for Influenza:", choices = c("SIRH"='sirh', "SEIRH"='seirh'), inline=TRUE),
+                 checkboxGroupInput("options_flu", "Select Compartmental Model for Influenza:", choices = c("SIRH"='sirh', "SEIRH"='seirh'), inline=TRUE),
                  h5('For Influenza we recommend selecting the Sucscptible-Infectious-Recovered-Hospitalized option'),
                  checkboxGroupInput("nb_flu", "Select Number of Values for the time-dependent Force of Infection:", choices = c(2,3), inline = TRUE),
-                 h5('Typically a model with two-values for the time dependent FOI is suitable for fitting an entire Influenza season.'),
+                 h5('Typically a model with two-values for the time-dependent FOI is suitable for fitting an entire Influenza season.'),
                  dateInput("flu_start_fit", "Select Start Date For Fitting Influenza:", min = flu_start_fit_date_min[nyear], max= flu_start_fit_date_max[nyear],
                            value = flu_start_fit_date_min[nyear],format = "yyyy-mm-dd"),
                  h5('For Influenza the default start date for each season is recommended.')
@@ -321,7 +321,7 @@ tabsetPanel(
                h4('This model aims to replicate the entire time-series, capturing uncertainty from day-to-day variations in the data. You can save the plots data to your computer.'),
                hr(),
                column(12, checkboxGroupInput("diseaseStat", "Select Pathogens", choices = c("COVID-19"='covid19', "INFLUENZA" = 'influenza'), inline = TRUE)),
-               h4("You can select both pathogens or only one of them. Once you select a pathogen you will be promted to select the start date for the fit."),
+               h4("You can select both pathogens or only one of them. Once you select a pathogen you will be prompted to select the start date for the fit."),
                column(6,conditionalPanel(
                  condition = "input.diseaseStat.indexOf('covid19') !== -1",
                  dateInput("cov_start_fit_stat", "Select Start Date For Fitting COVID19:", min = cov_start_fit_date_min[nyear], max= cov_start_fit_date_max[nyear],
@@ -433,7 +433,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
     ),
     tabPanel("Statistical",
              fluidPage(
-               h2("Forecasing With A Baseline Statistical Model"),
+               h2("Forecasting With A Baseline Statistical Model"),
                h4("This model aims to replicate the entire time-series, capturing uncertainty from day-to-day variations in the data.
                Median forecast values reproduce the seven last observed values."),
                hr(),
@@ -526,18 +526,18 @@ tabPanel("About",
          fluidPage(
            h2("PROF"),
            p("PROF is an R package (with Fortran code) for fitting and forecasting infectious disease incidence.
-                         The package ingests publicly-available confirmed hospital admission data, fits mechanistic and statistical
+                         The package ingests publicly available confirmed hospital admission data, fits mechanistic and statistical
                          models to the data, and provides short-term probabilistic forecasts. Currently, the package supports fitting
                          and forecasting the individual and combined burden of influenza and COVID-19 at the state level.
-                         S[I]2HR and SE[I]2HR models are used to fit the two pathogens and both models use a flexible,
+                         S[I]2HR and SE[I]2HR models are used to fit the two pathogens, and both models use a flexible,
                          time-dependent transmission term. A baseline statistical model is also offered for each pathogen.
                          Once the User selects a state, and either one or both viruses,
                          the PROF fitting procedure iteratively determines the joint posterior distribution of model parameters.
                          The joint posterior distribution is then used with the model to generate location-specific probabilistic
                          forecasts of the near-term number of hospital admissions. If both viruses are chosen, this procedure is done
-                         twice and the total hospital burden forecast is estimated by combining the trajectory profiles of each disease
+                         twice, and the total hospital burden forecast is estimated by combining the trajectory profiles of each disease
                          in multiple ways, including random, ordered, and semi-ordered. If the statistical model is also chosen, each
-                         pathogen is independently fitted with the model and the combinded burden is estimated."),
+                         pathogen is independently fitted with the model, and the combined burden is estimated."),
            p("For more on PROF see",tags$a(href="https://predsci.github.io/PROF/",'our web documentation')),
            h2('Acknowledgement'),
            p("The development of PROF is supported by CSTE throught the CDC cooporative agreement number NU38OT000297.
