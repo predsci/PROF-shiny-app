@@ -709,7 +709,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       
       wis_arr = score_forecast(obs = obs_score, simdat = sim_score)
       
-      wis_df[[disease]] = data.frame(date=dates_score, wis = wis_arr, disease = disease, model = 'stat')
+      wis_df[[disease]] = data.frame(date=dates_score, wis = wis_arr, disease = disease, model = 'mech')
       
     }
 
