@@ -165,7 +165,7 @@ ui <- navbarPage(
                   the location your CSV data file. Once the data is uploaded, you can proceed to plot it."),
                p("For information on the CSV data file format specifications PROF see",tags$a(href="https://predsci.github.io/PROF/advanced/#uploading-your-own-data",'our web documentation')),
                hr(),
-               column(6, numericInput("population", "Enter Population Size:", value = 3e5, min = 1e3, max = 40000000)),
+               column(6, numericInput("population", "Enter Population Size:", value = NULL, min = 1e3, max = 40000000)),
                column(6,textInput("location_name", "Location Name:", value = "Enter Name")),
                column(12, div(style="text-align:center;", actionButton("submit", "Submit"))),
                h4("Press the submit button after providing location name and population."),

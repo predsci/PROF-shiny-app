@@ -114,14 +114,24 @@ server <- function(input, output, session) {
 
   # Update user uploaded location population and name
   observeEvent(input$submit, {
+
+    if (is.na(input$population)) {
+      output$message <- renderText({
+        paste("ERROR: Please Enter poulation size BEFORE pressing the Submit Button")
+      })
+    }
     req(input$population)
+    
     shared_pop$data <- as.numeric(input$population)
+
     req(input$location_name)
+    
     shared_location_name$data <- input$location_name
     scientific_population <- format(as.numeric(input$population), scientific = TRUE)
-
+    
     output$message <- renderText({
-      paste("Population size", scientific_population, "and location name", input$location_name, "were recorded.")
+      if (shared_pop$data <=0) paste("ERROR: You Entered a NEGATIVE population value. Please correct and Press Submit again")
+      else paste("Population size", scientific_population, "and location name", input$location_name, "were recorded. If you made an error please update your input values")
     })
 
   })
