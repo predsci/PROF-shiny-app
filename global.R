@@ -72,18 +72,25 @@ data_modified_date = filename_timestamp_to_posix(data_file)
 # query HHS dataset modified date
 hhs_data_date = fetch_hhs_last_modified()
 
-if (hhs_data_date > data_modified_date) {
-  cat("Local data file is out-of-date. Attempting to update.\n")
-  down_result = fetch_hhs_data(down_dir="data")
-  if (down_result$out_flag==0) {
-    cat("HHS data file successfully updated.")
-    data_file = down_result$download_path
+if (is.null(hhs_data_date)) {
+  cat("Cannot contact HHS data API. Proceeding with local data file\n(last updated ", 
+      as.character(data_modified_date), ")", sep="")
+  data_file = file.path("data", data_file)
+} else {
+  if (hhs_data_date > data_modified_date) {
+    cat("Local data file is out-of-date. Attempting to update.\n")
+    down_result = fetch_hhs_data(down_dir="data")
+    if (down_result$out_flag==0) {
+      cat("HHS data file successfully updated.")
+      data_file = down_result$download_path
+    } else {
+      cat("There was a problem with the download. HHS data not updated.")
+      data_file = file.path("data", data_file)
+    }
   } else {
-    cat("There was a problem with the download. HHS data not updated.")
     data_file = file.path("data", data_file)
   }
-} else {
-  data_file = file.path("data", data_file)
 }
+
 
 

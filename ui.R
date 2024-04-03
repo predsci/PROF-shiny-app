@@ -72,7 +72,11 @@ ui <- navbarPage(
 
 
     #### Landing Page ####
+
     tabPanel("1. Explore Incidence",
+             h4('Model Daily Hospitlizatation data from HHS or upload your own hopitalization data'),
+             tabsetPanel(
+               tabPanel("HHS Data",
              fluidPage(
                h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
                h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
@@ -151,7 +155,77 @@ ui <- navbarPage(
              downloadButton("dlInc", "Save Incidence Data"),
              h4("Incidence data can be saved after plots are made.")
              ) # End of fluidPage
-    ), # End of Incidence Panel
+    ),
+    tabPanel("User Uploaded Data",
+             fluidPage(
+               h2("Exploring User Uploaded Data"),
+               h4("Please provide the following information: (i) Population size (as an integer; scientific notation is accepted).
+                  (ii) Location name (as a string).  After providing (i) and (ii) please press the Submit button. A message will
+                  appear displaying the information received by PROF. You can then proceed to browse and select
+                  the location your CSV data file. Once the data is uploaded, you can proceed to plot it."),
+               p("For information on the CSV data file format specifications PROF see",tags$a(href="https://predsci.github.io/PROF/advanced/#uploading-your-own-data",'our web documentation')),
+               hr(),
+               column(6, numericInput("population", "Enter Population Size:", value = NULL, min = 1e3, max = 40000000)),
+               column(6,textInput("location_name", "Location Name:", value = "Enter Name")),
+               column(12, div(style="text-align:center;", actionButton("submit", "Submit"))),
+               h4("Press the submit button after providing location name and population."),
+               hr(),
+               div(textOutput("message"), style = "font-size: 20px;"),
+               br(),
+               hr(),
+               fileInput("fileCSV", "Choose CSV File", accept = ".csv"),
+               h4("Browse your computer to the location of your data file. Proceed to plotting after data upload is completed."),
+               br(),
+               column(6,actionButton("plotUserDataButton", "Plot Incidence Data")),
+               column(12,plotlyOutput("plot1u")),
+               tags$head(
+                 tags$style(
+                   HTML("
+            #plot1u {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #plot1u.fading {
+              opacity: 0.2;
+            }
+          ")
+                 )
+               ),tags$script(
+                 HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#plot1u').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#plot1u').removeClass('fading');
+          });
+        ")
+               ),
+               column(12,plotlyOutput("plot2u")),
+               tags$head(
+                 tags$style(
+                   HTML("
+            #plot2u {
+              transition: opacity 0.5s ease-in-out;
+            }
+            #plot2u.fading {
+              opacity: 0.2;
+            }
+          ")
+                 )
+               ),tags$script(
+                 HTML("
+          $(document).on('shiny:busy', function(event) {
+            $('#plot2u').addClass('fading');
+          });
+          $(document).on('shiny:idle', function(event) {
+            $('#plot2u').removeClass('fading');
+          });
+        ")
+               ),
+               br(),
+               br(),
+               column(12,downloadButton("dlIncUsr", "Save Incidence Data")),
+               # h4('Enter population size for your data')
+             )))), # End of Incidence Panel
 
 tabPanel("2. Fit Incidence", # The Fitting Tab has the Mechanistic and Statistical tabs under it.
          h4("The Mechanistic Model takes about 10-15 minutes to run. During this time, you cannot make any changes or new selections. The Statistical model is nearly instantaneous. If you would like to evaluate a Forecast you must select an end-date that is prior to the end of the data stream and we strongly recommed using the same end-date for both Mechanistic and Statistical Fitting."),
@@ -159,7 +233,7 @@ tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
                h2("Fitting Mechanistic Compartmental Models To Data"),
-               h4("Setup a compratmental model for each pathogen. PROF supports two models: Susceptible-Exposed-Infectious-Recovered/Hospitalized (SEIRH)
+               h4("Setup a compartmental model for each pathogen. PROF supports two models: Susceptible-Exposed-Infectious-Recovered/Hospitalized (SEIRH)
                and Susceptible-Infectious-Recovered/Hospitalized (SIRH). You can proceed to the Forecasting Tab only after the fitting is completed.
                   You can save the plots/data to your computer."),
                hr(),
@@ -359,7 +433,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
     ),
     tabPanel("Statistical",
              fluidPage(
-               h2("Forecasing With A Baseline Statistical Model"),
+               h2("Forecasting With A Baseline Statistical Model"),
                h4("This model aims to replicate the entire time-series, capturing uncertainty from day-to-day variations in the data.
                Median forecast values reproduce the seven last observed values."),
                hr(),
@@ -455,9 +529,9 @@ tabPanel("About",
                          The package ingests publicly available confirmed hospital admission data, fits mechanistic and statistical
                          models to the data, and provides short-term probabilistic forecasts. Currently, the package supports fitting
                          and forecasting the individual and combined burden of influenza and COVID-19 at the state level.
-                         S[I]2HR and SE[I]2HR models are used to fit the two pathogens and both models use a flexible,
+                         S[I]2HR and SE[I]2HR models are used to fit the two pathogens, and both models use a flexible,
                          time-dependent transmission term. A baseline statistical model is also offered for each pathogen.
-                         Once the User selects a state and either one or both viruses,
+                         Once the User selects a state, and either one or both viruses,
                          the PROF fitting procedure iteratively determines the joint posterior distribution of model parameters.
                          The joint posterior distribution is then used with the model to generate location-specific probabilistic
                          forecasts of the near-term number of hospital admissions. If both viruses are chosen, this procedure is done

@@ -16,6 +16,10 @@ server <- function(input, output, session) {
 
   download_trigger <- reactiveValues(num=0)
 
+  shared_pop <- reactiveValues(data = NULL)
+
+  shared_location_name <- reactiveValues(data = NULL)
+
   # Observe button click for Tab 1
   observeEvent(input$plotDataButton, {
 
@@ -108,39 +112,199 @@ server <- function(input, output, session) {
       })
   })
 
+  # Update user uploaded location population and name
+  observeEvent(input$submit, {
 
-  # Observe button click for data download
-  # observeEvent(input$downloadDataButton, {
-  # 
-  #   shinyjs::html("loading_message_1a","<strong> Downloading Data..Please Wait</strong>")
-  # 
-  #   # download HHS hospitalizations file
-  #   # result <- hhs_hosp_state_down(down_dir="data")
-  #   result <- fetch_hhs_data(down_dir="data")
-  # 
-  #   shinyjs::html("loading_message_1a","")  # Disable loading message
-  # 
-  #   # bump download_trigger so the data message updates
-  #   download_trigger$num = download_trigger$num + 1
+    if (is.na(input$population)) {
+      output$message <- renderText({
+        paste("ERROR: Please Enter poulation size BEFORE pressing the Submit Button")
+      })
+    }
+    req(input$population)
+    
+    shared_pop$data <- as.numeric(input$population)
+
+    req(input$location_name)
+    
+    shared_location_name$data <- input$location_name
+    scientific_population <- format(as.numeric(input$population), scientific = TRUE)
+    
+    output$message <- renderText({
+      if (shared_pop$data <=0) paste("ERROR: You Entered a NEGATIVE population value. Please correct and Press Submit again")
+      else paste("Population size", scientific_population, "and location name", input$location_name, "were recorded. If you made an error please update your input values")
+    })
+
+  })
+
+  # Observe button for User Uploaded Data
+  observeEvent(input$fileCSV, {
+
+    req(input$fileCSV)
+
+
+    if (!is.null(shared_pop$data)) {
+      mypop <- shared_pop$data
+    } else {
+      mypop = NULL
+    }
+
+    if (!is.null(shared_location_name$data)) {
+      location_name <- input$location_name
+    } else {
+      mypop = NULL
+      location_name <- 'PROFVille'
+    }
+
+    loaded_data=csv_to_prof(filepath = input$fileCSV$datapath, population = mypop, location = location_name)
+
+    # note that both loaded_data does not yet have  the data_fit list in it 'data_fit'
+    shared_data$data = loaded_data
+
+    if (!is.null(shared_data$data)) {
+      obs_dates = list()
+      for (ind in 1:length(loaded_data)) {
+        obs_dates[[ind]] =loaded_data[[ind]]$data$date
+      }
+      dates_data$data$end_date   = min(max(obs_dates[[1]]), max(obs_dates[[2]]))
+      dates_data$data$start_date = max(min(obs_dates[[1]]), min(obs_dates[[2]]))
+
+    }
+
+  })
+
+
+  observeEvent(input$plotUserDataButton, {
+
+    shinyjs::html("loading_message_1c","<strong> Plotting User Data..Please Wait</strong>")
+
+    # note that both loaded_data does not yet have  the data_fit list in it 'data_fit'
+
+    if (!is.null(shared_data$data)){
+      diseases = names(shared_data$data)
+      mydata = mytitle = list()
+      for (ids in diseases) {
+        mydata[[ids]] = shared_data$data[[ids]]$data
+        mytitle[[ids]] = paste0(shared_data$data[[ids]]$loc_name,' - ',toupper(ids))
+        state_abbv = shared_data$data[[ids]]$loc_name # it is the same for all pathogens
+
+      }
+    }
+
+    # Create time series plots
+    output$plot1u <- renderPlotly({
+      plot1 <- plot_ly(mydata[[1]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['covid19']]),
+                       marker = list(color=mycolor_list[['covid19']]))
+      layout(plot1, title = mytitle[[1]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+             hovermode = "x unified")
+    })
+
+    output$plot2u <- renderPlotly({
+      plot2 <- plot_ly(mydata[[2]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['influenza']]),
+                       marker = list(color=mycolor_list[['influenza']]))
+      layout(plot2, title = mytitle[[2]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+             hovermode = "x unified")
+    })
+
+    shinyjs::html("loading_message_1c","")  # Disable loading message
+
+
+    #Downloadable csv file with incidence data for chosen location
+    output$dlIncUsr <- downloadHandler(
+
+      filename = function() { paste(state_abbv,"_incidence_",Sys.Date(),'.csv', sep='') },
+
+      content = function(file) {
+
+        # Title
+        t <- c(paste("Daily Incidence data for", state_abbv, sep = " "),"","","","")
+        #Subtitle
+        tt <-  c(paste("Data Downloaded on",Sys.Date(), sep = " "),"","","","")
+        #Column labels
+        l <- c('loc_abbv', 'date','disease','metric','value')
+        df = list()
+        for (ids in diseases) {
+          date = mydata[[ids]]$date
+          inc  = mydata[[ids]]$inc
+          loc  = rep(state_abbv, length(date))
+          disease = rep(ids, length(date))
+          metric  = rep('hosp', length(date))
+          df[[ids]] = data.frame('loc_abbv' = loc, 'date' = date, 'disease' = disease, 'metric'= metric, 'value' = inc)
+        }
+        if (length(df) > 1) df_tot = rbind(df[[1]], df[[2]])
+
+        df_tot[] <- lapply(df_tot, as.character)
+
+        #Source
+        # s <- c("Please see the Technical Notes tab of the application for data sources.","","","","")
+        # p <- c("Prepared by Predictive Science Inc.","","","","")
+
+        # dlm <- rbind(t, tt, l, df_tot, s, p)
+        dlm <- rbind(t, tt, l, df_tot)
+        write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
+      })
+  })
+
+  # observeEvent(input$population, {
+  #   req(input$number)
   # })
 
-  # Get data file status when app is loaded
-  # output$data_message <- reactive({
-  #   # update anytime download_trigger changes
-  #   req(download_trigger$num)
-  #   # load data file
-  #   hhs_data = read.csv(file="data/HHS_daily-hosp_state.csv")
-  #   data_date = as.Date(max(hhs_data$date))
-  #   cur_date = Sys.Date()
-  # 
-  #   if ((cur_date - data_date) < 12) {
-  #     data_message = "The local PROF-Shiny data file appears to be up-to-date, but the data file can be updated using the Download Data button."
-  #   } else {
-  #     data_message = paste0("The local PROF-Shiny data file contains data from over 11 days ago (", data_date, "). Pressing the 'Download Data' button will likely result in more up-to-date data.")
-  #   }
-  #   # renderText(data_message)
-  #   data_message
+
+  #   # Create time series plots
+  #   output$plot1 <- renderPlotly({
+  #     plot1 <- plot_ly(mydata[[1]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['covid19']]),
+  #                      marker = list(color=mycolor_list[['covid19']]))
+  #     layout(plot1, title = mytitle[[1]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+  #            hovermode = "x unified")
+  #   })
+  #
+  #   output$plot2 <- renderPlotly({
+  #     plot2 <- plot_ly(mydata[[2]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['influenza']]),
+  #                      marker = list(color=mycolor_list[['influenza']]))
+  #     layout(plot2, title = mytitle[[2]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+  #            hovermode = "x unified")
+  #   })
+  #
+  #
+  #
+  #
+  #   #Downloadable csv file with incidence data for chosen location
+  #   output$dlInc <- downloadHandler(
+  #
+  #     filename = function() { paste(state_abbv,"_incidence_",Sys.Date(),'.csv', sep='') },
+  #
+  #     content = function(file) {
+  #
+  #       # Title
+  #       t <- c(paste("Daily Incidence data for", state_abbv, sep = " "),"","","","")
+  #       #Subtitle
+  #       tt <-  c(paste("Data Downloaded on",Sys.Date(), sep = " "),"","","","")
+  #       #Column labels
+  #       l <- c('loc_abbv', 'date','disease','metric','value')
+  #       df = list()
+  #       for (ids in diseases) {
+  #         date = mydata[[ids]]$date
+  #         inc  = mydata[[ids]]$inc
+  #         loc  = rep(state_abbv, length(date))
+  #         disease = rep(ids, length(date))
+  #         metric  = rep('hosp', length(date))
+  #         df[[ids]] = data.frame('loc_abbv' = loc, 'date' = date, 'disease' = disease, 'metric'= metric, 'value' = inc)
+  #       }
+  #       if (length(df) > 1) df_tot = rbind(df[[1]], df[[2]])
+  #
+  #       df_tot[] <- lapply(df_tot, as.character)
+  #
+  #       #Source
+  #       # s <- c("Please see the Technical Notes tab of the application for data sources.","","","","")
+  #       # p <- c("Prepared by Predictive Science Inc.","","","","")
+  #
+  #       # dlm <- rbind(t, tt, l, df_tot, s, p)
+  #       dlm <- rbind(t, tt, l, df_tot)
+  #       write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
+  #     })
   # })
+
+
+
 
  observe({
    if (!is.null(shared_data$data)) {
@@ -175,7 +339,7 @@ server <- function(input, output, session) {
  })
 
 
-  # Observe button click for Tab 2
+  # Observe button click for Tab 2 HHS data
   observeEvent(input$fitDataButton, {
 
     prof_data <- shared_data$data
@@ -384,8 +548,8 @@ server <- function(input, output, session) {
         })
 
     } else {
-      
-   
+
+
     par_list <- shared_par$data
 
     disease <- input$disease
@@ -576,7 +740,7 @@ server <- function(input, output, session) {
       state_abbv=input$location
 
       wis_output<- shiny_plot_wis(wis_data, state_abbv)
-      
+
       wis_df <- wis_output$wis_df
       # Render the plot
       output$wis_plot <- renderPlotly({
@@ -585,23 +749,23 @@ server <- function(input, output, session) {
 
       wis_df$metric = rep('wis', nrow(wis_df))
       wis_df$loc_abbv = rep(state_abbv, nrow(wis_df))
-      
+
     } else {
-      
+
       output$wis_plot <- renderPlotly({
         ggplot() +
           annotate("text", x = 0.5, y = 0.5, label = text, size = 10, color = "red", hjust = 0.5, vjust = 0.5)
       })
-      
+
       wis_df = NULL
     }
 
     output$dlWIS <- downloadHandler(
-      
+
       filename = function() { paste(state_abbv,"_wis_",Sys.Date(),'.csv', sep='') },
-      
+
       content = function(file) {
-        
+
         # Title
         t <- c(paste("WIS for ", state_abbv,'Hospitalization data', sep = " "),"","","","","")
         #Subtitle
@@ -611,7 +775,7 @@ server <- function(input, output, session) {
 
         df_tot = wis_df
         df_tot[] <- lapply(df_tot, as.character)
-        
+
         dlm <- rbind(t, tt, l, df_tot)
         write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
       })
