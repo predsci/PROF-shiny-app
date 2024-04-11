@@ -427,7 +427,7 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
 }
 
 
-shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrcst = 35) {
+shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrcst, err_cor, method_name="semi_sorted_randA") {
 
   tab_list = fit_list$tab_list
 
@@ -480,11 +480,12 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     ntimes = length(times)
 
-    ntimes_frcst= ndates + nfrcst
+    cadence = as.numeric(dates_fit[2]-dates_fit[1])
+
+    ntimes_frcst= ndates + nfrcst/cadence
 
     # build also the arrays for the forecasts
 
-    cadence = as.numeric(dates_fit[2]-dates_fit[1])
     if (cadence == 1) {
       cadence_lab = paste0(cadence, ' day')
       print_lab = 'Days'
@@ -495,8 +496,14 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       cadence_lab = paste0(cadence, ' week')
       print_lab = 'Weeks'
       dates_frcst = seq(from = dates_fit[1], length = ntimes_frcst, by = '1 week')
+      #check that nfrcst is a product of seven
+      if (nfrcst %% 7 != 0) {
+        print("\nError: For weekly data nfrcst must be a prodcut of seven (e.g., 7, 14, 21..) \n")
+        return()
+      }
     }
 
+    times_frcst = dates_to_int(dates_frcst)
 
     dates_frcst_list[[ip]] = dates_frcst
 
@@ -541,7 +548,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     obs_fit = mydata$data_fit$inc
 
     #print information to the User
-    cat("\nCreating Forecast: ", nfrcst," ", print_lab, " Forward for ", reg_name, ' ', toupper(disease),'\n')
+    cat("\nCreating Forecast: ", nfrcst/cadence," ", print_lab, " Forward for ", reg_name, ' ', toupper(disease),'\n')
 
     if (model == 'sirh') {
       # Here using a time-dependent version
@@ -596,9 +603,9 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
         results0 <- results0[,-1]
         yinit0 <- as.numeric(results0[nrow(results0),])
         if (nb == 2) {
-          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='lsoda', func=td2_sirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td2_sirh_dynamics, parms = parms)
         } else {
-          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='lsoda', func=td3_sirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td3_sirh_dynamics, parms = parms)
           # calling H2 Ih here
         }
 
@@ -660,9 +667,9 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
         results0 <- results0[,-1]
         yinit0 <- as.numeric(results0[nrow(results0),])
         if (nb == 2) {
-          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='lsoda', func=td2_seirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td2_seirh_dynamics, parms = parms)
         } else {
-          results <- ode(y=yinit0, t = 1:ntimes_frcst, method='lsoda', func=td3_seirh_dynamics, parms = parms)
+          results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td3_seirh_dynamics, parms = parms)
           # calling H2 Ih here
         }
 
@@ -693,7 +700,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     # we can score the forecast if the data overlaps the forecast
     #
-    
+
     if (length(dates) > length(dates_fit)) {
       dates_frcst_only = anti_join(data.frame(date=dates_frcst), data.frame(date=dates_fit), by = "date")$date #Forecast only dates
       # which of the forecast only dates are also in the observation dates
@@ -703,24 +710,24 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       nscore = length(dates_frcst_only_in_obs)
       obs_score = obs[keep_ind_obs]
       dates_score = dates[keep_ind_obs]
-      
+
       # find the subset from the model that we are going to score
       sim_score = simdat[, keep_ind_model]
-      
+
       wis_arr = score_forecast(obs = obs_score, simdat = sim_score)
-      
+
       wis_df[[disease]] = data.frame(date=dates_score, wis = wis_arr, disease = disease, model = 'mech')
-      
+
     }
 
-    npad = nfrcst - length(obs)
+    npad = nfrcst/cadence - length(obs)
     if (npad > 0) {
       reported = c(obs, rep(NA, npad))
     } else {
       reported = obs[1:length(dates_frcst)]
     }
 
-    npad_fit = nfrcst - length(obs_fit)
+    npad_fit = nfrcst/cadence - length(obs_fit)
 
     if (npad_fit > 0) {
       reported_fit = c(obs_fit, rep(NA, npad_fit))
@@ -736,7 +743,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     quantiles <- t(quantiles)
     quantiles <- as.data.frame(quantiles)
-    total=cbind(date = as.Date(dates_frcst, format = '%Y-%m-%d'),time = 1:ntimes_frcst,quantiles,
+    total=cbind(date = as.Date(dates_frcst, format = '%Y-%m-%d'),time = times_frcst,quantiles,
                 reported = reported, reported_fit = reported_fit)
 
     # Remove 'X' from column names
@@ -815,7 +822,22 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   # Combine forecasts
   cat("Combining Forecasts \n")
 
-  combined_frcst <- combine_forecasts(prof_data, dates_frcst_list, simdat_list)
+  # combined_frcst <- combine_forecasts(prof_data, dates_frcst_list, simdat_list)
+
+  combined_frcst_ecor <- combine_fore_err_corr(prof_data, dates_frcst_list, simdat_list,
+                                               err_corr=err_cor, nfrcst=nfrcst/cadence,
+                                               method_name=method_name)
+  combined_frcst_rand <- combine_fore_err_corr(prof_data,
+                                               dates_frcst_list, simdat_list,
+                                               err_corr=0, nfrcst=nfrcst/cadence,
+                                               method_name=method_name)
+
+  combined_frcst = combined_frcst_ecor
+  combined_frcst$simdat_both[[2]] = combined_frcst_rand$simdat_both[[1]]
+
+  combined_names <- c("err_cor", "random")
+
+  names(combined_frcst$simdat_both) = combined_names
 
   obs_each_list = combined_frcst$obs_each_list
 
@@ -823,28 +845,28 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   simdat_both = combined_frcst$simdat_both
 
-  dates_both  = combined_frcst$dates_both
+  dates_both_data  = combined_frcst$dates_both_data
+  dates_fore = combined_frcst$dates_fore
 
   obs_both    = combined_frcst$obs_both
 
   obs_fit_both = combined_frcst$obs_fit_both
 
-  npad = length(dates_both) - length(obs_both)
+  # npad = length(dates_both) - length(obs_both)
+  npad = length(dates_fore)
   if (npad > 0) {
     reported_both = c(obs_both, rep(NA, npad))
   } else {
-    reported_both = obs_both[1:length(dates_both)]
+    reported_both = obs_both[1:length(dates_both_data)]
   }
 
-  npad_fit = length(dates_both) - length(obs_fit_both)
+  npad_fit = length(dates_both_data)
 
   if (npad_fit > 0) {
     reported_fit_both = c(obs_fit_both, rep(NA, npad))
   } else {
-    reported_fit_both = obs_fit_both[1:length(dates_both)]
+    reported_fit_both = obs_fit_both[1:length(dates_both_data)]
   }
-
-  combined_names <- c('random', 'sorted')
 
   # find maximum in simdat_both of random and sorted and use
 
@@ -855,39 +877,54 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   # create a long data-frame with the reported values for both pathogens
   data_df_list = list()
+  plot_dates = c(dates_both_data, dates_fore)
 
   for (ip in 1:npath) {
-
-    data_df_list[[ip]] = data.frame(date = as.Date(dates_both, format = '%Y-%m-%d'),disease = rep(disease_list[[ip]], length(dates_both)),
-                                    reported = c(obs_each_list[[ip]], rep(NA, length(dates_both)-length(obs_both))))
+    data_df_list[[ip]] = data.frame(
+      # date = as.Date(dates_both, format = '%Y-%m-%d'),
+      date = plot_dates,
+      disease = rep(disease_list[[ip]], length(plot_dates)),
+      reported = c(obs_each_list[[ip]], rep(NA, npad))
+    )
   }
   data_df = rbind(data_df_list[[1]], data_df_list[[2]])
 
-  for (ip in 1:npath) {
+  for (ic in 1:length(combined_names)) {
 
-    apply(simdat_both[[ip]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
+    apply(simdat_both[[ic]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
 
     quantiles_both <- t(quantiles_both)
     quantiles_both <- as.data.frame(quantiles_both)
+    quantiles_pad = as.data.frame(matrix(data=NA, nrow=npad_fit,
+                                         ncol=ncol(quantiles_both))
+    )
+    names(quantiles_pad) = names(quantiles_both)
+    quantiles_both = rbind(quantiles_pad, quantiles_both)
 
-    forecast_traj[[combined_names[[ip]]]] = list(traj = simdat_both[[ip]],
-                                                 date = as.Date(dates_both, format = '%Y-%m-%d'),
+    forecast_traj[[combined_names[[ic]]]] = list(traj = simdat_both[[ic]],
+                                                 date = plot_dates,
                                                  reported_both = reported_both,
                                                  reported_fit_both = reported_fit_both)
 
-    total_both=cbind(date = as.Date(dates_both, format = '%Y-%m-%d'),quantiles_both,
-                     reported = c(obs_both, rep(NA, length(dates_both)-length(obs_both))),
-                     reported_fit = c(obs_fit_both, rep(NA, length(dates_both)-length(obs_fit_both))))
+    total_both=cbind(date = plot_dates,
+                     quantiles_both,
+                     reported = c(obs_both, rep(NA, npad)),
+                     reported_fit = c(obs_fit_both, rep(NA, npad)))
 
-    total_list[[combined_names[[ip]]]] = total_both
+    total_list[[combined_names[[ic]]]] = total_both
 
-    copy_total_both = total_both
-    total_both[1:length(obs_fit_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
+    # copy_total_both = total_both
+    # total_both[1:length(obs_fit_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
 
-    mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
+    if (combined_names[ic]=="err_cor") {
+      mytitle = paste0(reg_name,' - Combined Burden (err_cor=', err_cor, ')')
+    } else {
+      mytitle = paste0(reg_name,' - Combined Burden (err_cor=0.0)')
+    }
+
 
     # y-label only on left most plot
-    if (ip == 1) {
+    if (ic == 1) {
       ylab = paste0(cadence_lab, ' New Hosp')
     } else {
       ylab=""
@@ -901,7 +938,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       y = c(0, both_max)  # Specify the y-coordinate range (adjust as needed)
     )
 
-    pl[[combined_names[ip]]] <- ggplot(data=total_both,
+    pl[[combined_names[ic]]] <- ggplot(data=total_both,
                                        mapping=aes(x=date))+
       geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`),fill='blue',alpha=0.5) +
       geom_ribbon(aes(ymin=`25%`,ymax=`75%`),fill='blue',alpha=0.8) +
@@ -911,7 +948,6 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       labs(y=ylab,x=xlab) +
       theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
       annotate("text", x = median(total_both$date), y = 0.93*both_max, label = mytitle, size = 4)
-
 
   }
 
@@ -928,7 +964,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 }
 
 
-shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
+shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, method_name="semi_sorted_randA") {
 
   ntraj = 1000
 
@@ -958,6 +994,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     # hospitalization incidence - fitted
     inc = mydata$data_fit_stat$inc
 
+
     # dates - fitted
     dates_fit  = mydata$data_fit_stat$date
 
@@ -969,11 +1006,12 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     ntimes = length(times)
 
-    ntimes_frcst= ndates + nfrcst
+    cadence = as.numeric(dates_fit[2]-dates_fit[1])
+
+    ntimes_frcst= ndates + nfrcst/cadence
 
     # build also the arrays for the forecasts
 
-    cadence = as.numeric(dates_fit[2]-dates_fit[1])
     if (cadence == 1) {
       cadence_lab = paste0(cadence, ' day')
       print_lab = 'Days'
@@ -985,6 +1023,8 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
       print_lab = 'Weeks'
       dates_frcst = seq(from = dates_fit[1], length = ntimes_frcst, by = '1 week')
     }
+
+    times_frcst = dates_to_int(dates_frcst)
 
     dates_frcst_list[[ip]] = dates_frcst
 
@@ -1002,10 +1042,10 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     cat('\nCreating ',toupper(disease),' Statistical Forecast for ', reg_name,' ', nfrcst,' Days Forward\n\n')
 
-    simdat = stat_forecast(mydata, ntraj, nfrcst)
+    simdat = stat_forecast(mydata, ntraj, nfrcst/cadence)
 
     simdat_list[[ip]] = simdat
- 
+
     # we can score the forecast if the data overlaps the forecast
     #
 
@@ -1028,14 +1068,14 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     }
 
-    npad = nfrcst - length(obs)
+    npad = nfrcst/cadence - length(obs)
     if (npad > 0) {
       reported = c(obs, rep(NA, npad))
     } else {
       reported = obs[1:length(dates_frcst)]
     }
 
-    npad_fit = nfrcst - length(obs_fit)
+    npad_fit = nfrcst/cadence - length(obs_fit)
 
     if (npad_fit > 0) {
       reported_fit = c(obs_fit, rep(NA, npad_fit))
@@ -1051,7 +1091,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
     quantiles <- t(quantiles)
     quantiles <- as.data.frame(quantiles)
-    total=cbind(date = as.Date(dates_frcst, format = '%Y-%m-%d'),time = 1:ntimes_frcst,quantiles,
+    total=cbind(date = as.Date(dates_frcst, format = '%Y-%m-%d'),time = times_frcst,quantiles,
                 reported = reported, reported_fit = reported_fit)
 
     # Remove 'X' from column names
@@ -1087,7 +1127,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     mytitle = paste0(reg_name,' - ', toupper(disease), ' Statistical Baseline Model')
 
     start_year = lubridate::year(range(dates)[1])
-    end_year   = start_year + 1
+    end_year   = lubridate::year(range(dates)[2])
 
     vertical_line <- data.frame(
       x = dates[ntimes],  # Specify the x-coordinate where the vertical line should be
@@ -1126,7 +1166,21 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
   # Combine forecasts
   cat("Combining Forecasts \n")
 
-  combined_frcst <- combine_forecasts(prof_data, dates_frcst_list, simdat_list)
+  combined_frcst_ecor <- combine_fore_err_corr(prof_data, dates_frcst_list, simdat_list,
+                                               err_corr=err_cor, nfrcst=nfrcst/cadence,
+                                               method_name=method_name)
+  combined_frcst_rand <- combine_fore_err_corr(prof_data,
+                                               dates_frcst_list, simdat_list,
+                                               err_corr=0, nfrcst=nfrcst/cadence,
+                                               method_name=method_name)
+
+  combined_frcst = combined_frcst_ecor
+  combined_frcst$simdat_both[[2]] = combined_frcst_rand$simdat_both[[1]]
+
+  combined_names <- c("err_cor", "random")
+  names(combined_frcst$simdat_both) = combined_names
+
+  # combined_frcst <- combine_forecasts(prof_data, dates_frcst_list, simdat_list)
 
   obs_each_list = combined_frcst$obs_each_list
 
@@ -1134,27 +1188,31 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
   simdat_both = combined_frcst$simdat_both
 
-  dates_both  = combined_frcst$dates_both
+  dates_both_data  = combined_frcst$dates_both_data
+  dates_fore = combined_frcst$dates_fore
 
   obs_both    = combined_frcst$obs_both
 
   obs_fit_both = combined_frcst$obs_fit_both
 
-  npad = nfrcst - length(obs_both)
+  # npad = nfrcst/cadence - length(obs_both)
+  npad = length(dates_fore)
+
   if (npad > 0) {
     reported_both = c(obs_both, rep(NA, npad))
   } else {
-    reported_both = obs_both[1:length(dates_both)]
+    reported_both = obs_both[1:length(dates_both_data)]
   }
 
-  npad_fit = nfrcst - length(obs_fit_both)
+  npad_fit = length(dates_both_data)
+
   if (npad_fit > 0) {
     reported_fit_both = c(obs_fit_both, rep(NA, npad))
   } else {
-    reported_fit_both = obs_fit_both[1:length(dates_both)]
+    reported_fit_both = obs_fit_both[1:length(dates_both_data)]
   }
 
-  combined_names <- c('random', 'sorted')
+  # combined_names <- c('random', 'sorted')
 
   # find maximum in simdat_both of random and sorted and use
 
@@ -1165,39 +1223,69 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
 
   # create a long data-frame with the reported values for both pathogens
   data_df_list = list()
+  plot_dates = c(dates_both_data, dates_fore)
 
   for (ip in 1:npath) {
-
-    data_df_list[[ip]] = data.frame(date = as.Date(dates_both, format = '%Y-%m-%d'),disease = rep(disease_list[[ip]], length(dates_both)),
-                                    reported = c(obs_each_list[[ip]], rep(NA, length(dates_both)-length(obs_both))))
+    data_df_list[[ip]] = data.frame(
+      # date = as.Date(dates_both, format = '%Y-%m-%d'),
+      date = plot_dates,
+      disease = rep(disease_list[[ip]], length(plot_dates)),
+      reported = c(obs_each_list[[ip]], rep(NA, npad))
+    )
   }
   data_df = rbind(data_df_list[[1]], data_df_list[[2]])
 
-  for (ip in 1:length(combined_names)) {
+  for (ic in 1:length(combined_names)) {
 
-    apply(simdat_both[[ip]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
+    apply(simdat_both[[ic]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
 
     quantiles_both <- t(quantiles_both)
     quantiles_both <- as.data.frame(quantiles_both)
+    quantiles_pad = as.data.frame(matrix(data=NA, nrow=npad_fit,
+                                         ncol=ncol(quantiles_both))
+    )
+    names(quantiles_pad) = names(quantiles_both)
+    quantiles_both = rbind(quantiles_pad, quantiles_both)
 
-    forecast_traj[[combined_names[[ip]]]] = list(traj = simdat_both[[ip]],
-                                                 date = as.Date(dates_both, format = '%Y-%m-%d'),
+    forecast_traj[[combined_names[[ic]]]] = list(traj = simdat_both[[ic]],
+                                                 date = plot_dates,
                                                  reported_both = reported_both,
                                                  reported_fit_both = reported_fit_both)
 
-    total_both=cbind(date = as.Date(dates_both, format = '%Y-%m-%d'),quantiles_both,
-                     reported = c(obs_both, rep(NA, length(dates_both)-length(obs_both))),
-                     reported_fit = c(obs_fit_both, rep(NA, length(dates_both)-length(obs_fit_both))))
+    total_both=cbind(date = plot_dates,
+                     quantiles_both,
+                     reported = c(obs_both, rep(NA, npad)),
+                     reported_fit = c(obs_fit_both, rep(NA, npad)))
 
-    total_list[[combined_names[ip]]] = total_both
+    total_list[[combined_names[[ic]]]] = total_both
 
-    copy_total_both = total_both
-    total_both[1:length(obs_fit_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
+    # apply(simdat_both[[ic]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
+    #
+    # quantiles_both <- t(quantiles_both)
+    # quantiles_both <- as.data.frame(quantiles_both)
+    #
+    # forecast_traj[[combined_names[[ic]]]] = list(traj = simdat_both[[ic]],
+    #                                              date = as.Date(dates_both, format = '%Y-%m-%d'),
+    #                                              reported_both = reported_both,
+    #                                              reported_fit_both = reported_fit_both)
+    #
+    # total_both=cbind(date = as.Date(dates_both, format = '%Y-%m-%d'),quantiles_both,
+    #                  reported = c(obs_both, rep(NA, length(dates_both)-length(obs_both))),
+    #                  reported_fit = c(obs_fit_both, rep(NA, length(dates_both)-length(obs_fit_both))))
+    #
+    # total_list[[combined_names[ic]]] = total_both
+    #
+    # copy_total_both = total_both
+    # total_both[1:length(obs_fit_both), c('2.5%', '25%', '50%', '75%', '97.5%')] <- NA
 
-    mytitle = paste0(reg_name,' - Combined Burden (', combined_names[ip],')')
+    if (combined_names[ic]=="err_cor") {
+      mytitle = paste0(reg_name,' - Combined Burden (err_cor=', err_cor, ')')
+    } else {
+      mytitle = paste0(reg_name,' - Combined Burden (err_cor=0.0)')
+    }
 
     # y-label only on left most plot
-    if (ip == 1) {
+    if (ic == 1) {
       ylab = paste0(cadence_lab, ' New Hosp')
     } else {
       ylab=""
@@ -1212,12 +1300,12 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     )
 
 
-    pl[[combined_names[ip]]] <- ggplot(data=data_df,
+    pl[[combined_names[ic]]] <- ggplot(data=data_df,
                                        mapping=aes(x=date))+
       geom_col(aes(y=reported, fill = disease, alpha = 0.5), alpha = 0.5) +
       geom_ribbon(data=total_both, aes(x=date, ymin=`2.5%`,ymax=`97.5%`),fill='blue',alpha=0.5, inherit.aes = FALSE) +
-       geom_ribbon(data=total_both, aes(x=date, ymin=`25%`,ymax=`75%`),fill='blue',alpha=0.8, inherit.aes = FALSE) +
-       geom_line(data=total_both, aes(x= date, y=`50%`),color='black',  inherit.aes = FALSE) +
+      geom_ribbon(data=total_both, aes(x=date, ymin=`25%`,ymax=`75%`),fill='blue',alpha=0.8, inherit.aes = FALSE) +
+      geom_line(data=total_both, aes(x= date, y=`50%`),color='black',  inherit.aes = FALSE) +
       coord_cartesian(ylim=c(0, both_max)) +
       labs(y=ylab,x=xlab) +
       theme(plot.title = element_text(hjust = 0.5, vjust = 0.7), legend.position = "none") +
@@ -1234,7 +1322,6 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst) {
     interactive_plot[[ip]] <- ggplotly(pl[[ip]])
   }
 
-  cat("\nMaking Plots\n\n")
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
                             nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
