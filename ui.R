@@ -170,7 +170,7 @@ ui <- navbarPage(
                column(12, div(style="text-align:center;", actionButton("submit", "Submit"))),
                h4("Press the submit button after providing location name and population."),
                hr(),
-               div(textOutput("message"), style = "font-size: 20px;"),
+               div(textOutput("message"), style = "font-size: 20px; color: red;"),
                br(),
                hr(),
                fileInput("fileCSV", "Choose CSV File", accept = ".csv"),
@@ -390,16 +390,31 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
              fluidPage(
                h2("Forecasting Using a Mechanistic Compartmental Model"),
                h4("For each fitted pathogen, the posterior distribution of the parameters will be
-                  utilized to generate a forecast. Note that only pathogens that were fitted will be forecasted."),
+                  utilized to generate a forecast. Only pathogens that were fitted can be forecasted.
+                  If you fitted both pathogens we ask that you select the value of the error-correlation parameter.
+                   This parameter controls the width of the combined uncertainty of the forecast, it increases with increasing value.
+                   A value of one (default) corresponds to fully correlated errors in both forecasts.  A value of zero is always
+                  calculated by the code.  When one pathogen dominates the summed uncertainty magnitude, the specific value you select has little effect."),
                hr(),
-               column(12,sliderInput("days_frcst", "Select Number of Days For Forecast:",
-                                    min = 7, max = 42, value = c(28))),
-               h4("Move the slider to select the number of days for the forecast."),
+               column(12, conditionalPanel(
+                 condition = "input.disease.indexOf('covid19') == -1 | input.disease.indexOf('influenza') == -1",
+                 sliderInput("days_frcst", "Select Number of Days For Forecast:",min = 7, max = 35, value = 28, step = 7),
+                 h4("Move the slider to select the number of days for the forecast."))),
+               column(6,conditionalPanel(
+                 condition = "input.disease.indexOf('covid19') !== -1 & input.disease.indexOf('influenza') !== -1",
+                 sliderInput("days_frcst", "Select Number of Days For Forecast:",
+                                    min = 7, max = 35, value = 28, step = 7),
+               h4("Move the slider to select the number of days for the forecast."))),
+               column(6,conditionalPanel(
+                 condition = "input.disease.indexOf('covid19') !== -1 & input.disease.indexOf('influenza') !== -1",sliderInput("err_cor","Select a Value for Error Correlation",
+                                                                                                                               min=0.1,max=1,step=0.1,value=1),
+                 h4("Please select a value. One is the sorted option."))),
                br(),
                column(12,actionButton("forecastButton", "Mechanistic Forecast")),
                br(),
                br(),
-               h4("Once you made your selection press the Forecast button."),
+               column(12,h4("Once you made your selection press the Forecast button.")),
+               br(),
                hr(),
                htmlOutput("loading_message_4"),
                plotlyOutput("plot5"),
@@ -435,16 +450,30 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
              fluidPage(
                h2("Forecasting With A Baseline Statistical Model"),
                h4("This model aims to replicate the entire time-series, capturing uncertainty from day-to-day variations in the data.
-               Median forecast values reproduce the seven last observed values."),
+               Median forecast values reproduce the seven last observed values. If you fitted both pathogens we ask that you select the value of the error-correlation parameter.
+                   This parameter controls the width of the combined uncertainty of the forecast, it increases with increasing value.
+                   A value of one (default) corresponds to fully correlated errors in both forecasts.  A value of zero is always
+                  calculated by the code.  When one pathogen dominates the summed uncertainty magnitude, the specific value you select has little effect."),
                hr(),
-               column(12,sliderInput("days_frcst_stat", "Select Number of Days For Forecast:",
-                           min = 7, max = 42, value = c(28))),
-               br(),
-               h4("Move the slider to select the number of days for the forecast."),
+               column(12, conditionalPanel(
+                 condition = "input.diseaseStat.indexOf('covid19') == -1 | input.diseaseStat.indexOf('influenza') == -1",
+                 sliderInput("days_frcst_stat", "Select Number of Days For Forecast:",min = 7, max = 35, value = 28, step = 7),
+                 h4("Move the slider to select the number of days for the forecast."))),
+               column(6,conditionalPanel(
+                 condition = "input.diseaseStat.indexOf('covid19') !== -1 & input.diseaseStat.indexOf('influenza') !== -1",
+                 sliderInput("days_frcst_stat", "Select Number of Days For Forecast:",
+                             min = 7, max = 35, value = 28, step = 7),
+                 h4("Move the slider to select the number of days for the forecast."))),
+               column(6,conditionalPanel(
+                 condition = "input.diseaseStat.indexOf('covid19') !== -1 & input.diseaseStat.indexOf('influenza') !== -1",sliderInput("err_cor_stat","Select a Value for Error Correlation",
+                                                                                                                               min=0.1,max=1,step=0.1,value=1),
+                 h4("Please select a value. One is the sorted option."))),
                br(),
                column(12,actionButton("forecastStatButton", "Statistical Forecast")),
                br(),
-               h4("Once you made your selection press the Forecast button."),
+               br(),
+               column(12,h4("Once you made your selection press the Forecast button.")),
+               br(),
                hr(),
                htmlOutput("loading_message_5"),
                br(),

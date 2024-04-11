@@ -49,11 +49,15 @@ server <- function(input, output, session) {
 
     if (!is.null(shared_data$data)){
       diseases = names(loaded_data)
-      mydata = mytitle = list()
+      mydata = mytitle = mycadence = list()
       for (ids in diseases) {
         mydata[[ids]] = loaded_data[[ids]]$data
         mytitle[[ids]] = paste0(loaded_data[[ids]]$loc_name,' - ',toupper(ids))
         state_abbv = loaded_data[[ids]]$loc_name # it is the same for all pathogens
+        # determine data cadence
+        cadence = as.numeric(mydata[[ids]]$date[2]-mydata[[ids]]$date[1])
+        if (cadence == 1) mycadence[[ids]] = 'Daily'
+        if (cadence == 7) mycadence[[ids]] = 'Weekly'
 
       }
     }
@@ -62,14 +66,14 @@ server <- function(input, output, session) {
       output$plot1 <- renderPlotly({
         plot1 <- plot_ly(mydata[[1]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['covid19']]),
                          marker = list(color=mycolor_list[['covid19']]))
-        layout(plot1, title = mytitle[[1]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+        layout(plot1, title = mytitle[[1]], xaxis = list(title = ""), yaxis = list(title = paste0(mycadence[[1]], " New Hospitalization")),
                hovermode = "x unified")
       })
 
       output$plot2 <- renderPlotly({
         plot2 <- plot_ly(mydata[[2]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['influenza']]),
                          marker = list(color=mycolor_list[['influenza']]))
-        layout(plot2, title = mytitle[[2]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+        layout(plot2, title = mytitle[[2]], xaxis = list(title = ""), yaxis = list(title = paste0(mycadence[[2]], " New Hospitalization")),
                hovermode = "x unified")
       })
 
@@ -121,17 +125,23 @@ server <- function(input, output, session) {
       })
     }
     req(input$population)
-    
+
     shared_pop$data <- as.numeric(input$population)
 
     req(input$location_name)
-    
+
     shared_location_name$data <- input$location_name
     scientific_population <- format(as.numeric(input$population), scientific = TRUE)
-    
+
     output$message <- renderText({
-      if (shared_pop$data <=0) paste("ERROR: You Entered a NEGATIVE population value. Please correct and Press Submit again")
-      else paste("Population size", scientific_population, "and location name", input$location_name, "were recorded. If you made an error please update your input values")
+      if (shared_pop$data <=0) {
+
+       paste0("ERROR: You Entered a NEGATIVE population value. Please correct and Press Submit again")
+
+      } else {
+        paste("Population size", scientific_population, "and location name", input$location_name, "were recorded. If you made an error please update your input values")
+      }
+
     })
 
   })
@@ -181,12 +191,15 @@ server <- function(input, output, session) {
 
     if (!is.null(shared_data$data)){
       diseases = names(shared_data$data)
-      mydata = mytitle = list()
+      mydata = mytitle = mycadence = list()
       for (ids in diseases) {
         mydata[[ids]] = shared_data$data[[ids]]$data
         mytitle[[ids]] = paste0(shared_data$data[[ids]]$loc_name,' - ',toupper(ids))
         state_abbv = shared_data$data[[ids]]$loc_name # it is the same for all pathogens
-
+        # determine data cadence
+        cadence = as.numeric(mydata[[ids]]$date[2]-mydata[[ids]]$date[1])
+        if (cadence == 1) mycadence[[ids]] = 'Daily'
+        if (cadence == 7) mycadence[[ids]] = 'Weekly'
       }
     }
 
@@ -194,14 +207,14 @@ server <- function(input, output, session) {
     output$plot1u <- renderPlotly({
       plot1 <- plot_ly(mydata[[1]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['covid19']]),
                        marker = list(color=mycolor_list[['covid19']]))
-      layout(plot1, title = mytitle[[1]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+      layout(plot1, title = mytitle[[1]], xaxis = list(title = ""), yaxis = list(title = paste0(mycadence[[1]], " New Hospitalization")),
              hovermode = "x unified")
     })
 
     output$plot2u <- renderPlotly({
       plot2 <- plot_ly(mydata[[2]], x = ~date, y = ~inc, type = "scatter", mode = "lines+markers", line=list(color=mycolor_list[['influenza']]),
                        marker = list(color=mycolor_list[['influenza']]))
-      layout(plot2, title = mytitle[[2]], xaxis = list(title = ""), yaxis = list(title = "Daily New Hospitalization"),
+      layout(plot2, title = mytitle[[2]], xaxis = list(title = ""), yaxis = list(title = paste0(mycadence[[2]], " New Hospitalization")),
              hovermode = "x unified")
     })
 
@@ -541,7 +554,7 @@ server <- function(input, output, session) {
     fit_list <- shared_fit$data$fit_list
     # fit_list will be NULL if a fit was not done before a forecast was requested
     if (is.null(fit_list)) {
-      text <- 'For a Mechanistic Forecast you nmust\nfirst do a Mechanistic Fit.\nGo to Fit Incidence -> Mechanistic Tab.'
+      text <- 'For a Mechanistic Forecast you must\nfirst do a Mechanistic Fit.\nGo to Fit Incidence -> Mechanistic Tab.'
       output$plot5 <- renderPlotly({
         ggplot() +
           annotate("text", x = 0.5, y = 0.5, label = text, size = 10, color = "red", hjust = 0.5, vjust = 0.5)
@@ -586,7 +599,7 @@ server <- function(input, output, session) {
 
     mech_forecast <- reactive ({
       if (!is.null(prof_data))
-        shiny_plot_forecast(prof_data = prof_data[diseases], par_list, fit_list, ntraj =1000, nfrcst = input$days_frcst)
+        shiny_plot_forecast(prof_data = prof_data[diseases], par_list, fit_list, ntraj =1000, nfrcst = input$days_frcst, err_cor = input$err_cor)
     })
 
 
@@ -644,9 +657,19 @@ server <- function(input, output, session) {
   # Observe button click for Tab 5
   observeEvent(input$forecastStatButton, {
 
-    prof_data <- shared_data$data
 
-    shinyjs::html("loading_message_5","<strong>Calculating Statistical Forecast..Please Wait.</strong>")
+    if (length(input$diseaseStat) == 0) {
+      text <- 'For a Statistical Forecast you must\nfirst do a Statistical Fit.\nGo to Fit Incidence -> Statistical Tab.'
+      output$plot6 <- renderPlotly({
+        ggplot() +
+          annotate("text", x = 0.5, y = 0.5, label = text, size = 10, color = "red", hjust = 0.5, vjust = 0.5)
+      })
+
+    } else {
+
+      prof_data <- shared_data$data
+
+   shinyjs::html("loading_message_5","<strong>Calculating Statistical Forecast..Please Wait.</strong>")
 
     if (length(input$diseaseStat) > 1) {
       diseases=c("covid19", "influenza")
@@ -657,7 +680,7 @@ server <- function(input, output, session) {
 
     stat_forecast <- reactive ({
       if (!is.null(prof_data))
-        shiny_plot_stat_forecast(prof_data = prof_data, diseases = diseases, nfrcst = input$days_frcst_stat)
+        shiny_plot_stat_forecast(prof_data = prof_data, diseases = diseases, nfrcst = input$days_frcst_stat, err_cor = input$err_cor_stat)
     })
 
 
@@ -704,12 +727,12 @@ server <- function(input, output, session) {
           colnames(df[[ids]]) = c('loc_abbv','date','disease','metric','value',"2.5%","25%","50%","75%","97.5%")
         }
         if (length(df) > 1) df_tot = rbind(df[[1]], df[[2]], df[[3]], df[[4]])
-
         df_tot[] <- lapply(df_tot, as.character)
 
         dlm <- rbind(t, tt, l, df_tot)
         write.table(dlm, file, row.names = F, col.names = F, quote = F, na= "NA", sep = ",")
       })
+    }
 
   })
 
