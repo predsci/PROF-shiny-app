@@ -820,7 +820,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   # If more than one pathogen
 
   # Combine forecasts
-  cat("Combining Forecasts \n")
+  cat("\nCombining Forecasts \n")
 
   # combined_frcst <- combine_forecasts(prof_data, dates_frcst_list, simdat_list)
 
@@ -871,8 +871,9 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   # find maximum in simdat_both of random and sorted and use
 
   both_max = 0.0
-  for (ip in 1:npath) {
+  for (ip in 1:length(combined_names)) {
     both_max = max(both_max, round(max(simdat_both[[ip]])))
+    both_max = max(both_max, reported_both, na.rm = TRUE)
   }
 
   # create a long data-frame with the reported values for both pathogens
@@ -880,11 +881,17 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   plot_dates = c(dates_both_data, dates_fore)
 
   for (ip in 1:npath) {
+    obs_each = obs_each_list[[ip]]
+    if (length(obs_each) > length(plot_dates)) {
+      reported = obs_each[1:length(plot_dates)]
+    } else {
+      reported = c(obs_each, rep(NA, length(plot_dates)-length(obs_each_list[[1]])))
+    }
     data_df_list[[ip]] = data.frame(
       # date = as.Date(dates_both, format = '%Y-%m-%d'),
       date = plot_dates,
       disease = rep(disease_list[[ip]], length(plot_dates)),
-      reported = c(obs_each_list[[ip]], rep(NA, npad))
+      reported = reported
     )
   }
   data_df = rbind(data_df_list[[1]], data_df_list[[2]])
@@ -903,13 +910,13 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     forecast_traj[[combined_names[[ic]]]] = list(traj = simdat_both[[ic]],
                                                  date = plot_dates,
-                                                 reported_both = reported_both,
+                                                 reported_both = reported_both[1:length(plot_dates)],
                                                  reported_fit_both = reported_fit_both)
 
     total_both=cbind(date = plot_dates,
                      quantiles_both,
-                     reported = c(obs_both, rep(NA, npad)),
-                     reported_fit = c(obs_fit_both, rep(NA, npad)))
+                     reported = reported_both[1:length(plot_dates)],
+                     reported_fit = reported_fit_both)
 
     total_list[[combined_names[[ic]]]] = total_both
 
@@ -1174,6 +1181,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
                                                err_corr=0, nfrcst=nfrcst/cadence,
                                                method_name=method_name)
 
+
   combined_frcst = combined_frcst_ecor
   combined_frcst$simdat_both[[2]] = combined_frcst_rand$simdat_both[[1]]
 
@@ -1212,6 +1220,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
     reported_fit_both = obs_fit_both[1:length(dates_both_data)]
   }
 
+
   # combined_names <- c('random', 'sorted')
 
   # find maximum in simdat_both of random and sorted and use
@@ -1219,6 +1228,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
   both_max = 0.0
   for (ip in 1:length(combined_names)) {
     both_max = max(both_max, round(max(simdat_both[[ip]])))
+    both_max = max(both_max, reported_both, na.rm = TRUE)
   }
 
   # create a long data-frame with the reported values for both pathogens
@@ -1226,13 +1236,20 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
   plot_dates = c(dates_both_data, dates_fore)
 
   for (ip in 1:npath) {
+    obs_each = obs_each_list[[ip]]
+    if (length(obs_each) > length(plot_dates)) {
+      reported = obs_each[1:length(plot_dates)]
+    } else {
+      reported = c(obs_each, rep(NA, length(plot_dates)-length(obs_each_list[[1]])))
+    }
     data_df_list[[ip]] = data.frame(
       # date = as.Date(dates_both, format = '%Y-%m-%d'),
       date = plot_dates,
       disease = rep(disease_list[[ip]], length(plot_dates)),
-      reported = c(obs_each_list[[ip]], rep(NA, npad))
+      reported = reported
     )
   }
+
   data_df = rbind(data_df_list[[1]], data_df_list[[2]])
 
   for (ic in 1:length(combined_names)) {
@@ -1249,13 +1266,15 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
 
     forecast_traj[[combined_names[[ic]]]] = list(traj = simdat_both[[ic]],
                                                  date = plot_dates,
-                                                 reported_both = reported_both,
+                                                 reported_both = reported_both[1:length(plot_dates)],
                                                  reported_fit_both = reported_fit_both)
 
     total_both=cbind(date = plot_dates,
                      quantiles_both,
-                     reported = c(obs_both, rep(NA, npad)),
-                     reported_fit = c(obs_fit_both, rep(NA, npad)))
+                     reported = reported_both[1:length(plot_dates)],
+                     # reported = c(obs_both, rep(NA, npad)),
+                     reported_fit = reported_fit_both)
+                     # reported_fit = c(obs_fit_both, rep(NA, npad)))
 
     total_list[[combined_names[[ic]]]] = total_both
 

@@ -410,6 +410,8 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                                                                                                                                min=0.1,max=1,step=0.1,value=1),
                  h4("Please select a value. One is the sorted option."))),
                br(),
+               br(),
+               br(),
                column(12,actionButton("forecastButton", "Mechanistic Forecast")),
                br(),
                br(),
@@ -468,6 +470,8 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                  condition = "input.diseaseStat.indexOf('covid19') !== -1 & input.diseaseStat.indexOf('influenza') !== -1",sliderInput("err_cor_stat","Select a Value for Error Correlation",
                                                                                                                                min=0.1,max=1,step=0.1,value=1),
                  h4("Please select a value. One is the sorted option."))),
+               br(),
+               br(),
                br(),
                column(12,actionButton("forecastStatButton", "Statistical Forecast")),
                br(),
@@ -547,9 +551,10 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
                br(),
                p("1. Evaluating epidemics forecasts in interval format, Bracher J, Ray EL, Gneiting T and Reich NG, ", tags$a(href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008618","PLoS Comput Biol 17(2): e1008618")),
                p("2. R package", tags$a(href="https://cran.r-project.org/web/packages/scoringutils/index.html", "scoringutils"))
-             ))
-    ),
-    downloadButton("dlWIS", "Save WIS Data")
+             ),
+             downloadButton("dlWIS", "Save WIS Data")),
+
+    )
     ),
 tabPanel("About",
          fluidPage(
