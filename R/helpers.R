@@ -59,6 +59,12 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
     nparamtot = dim(tab)[2] -1 # it includes the LLK hence the -1
 
+    nparam = nparamtot - 2 * nb
+
+    t0 = 0
+
+    dt = 1./15.
+
     z <- round(nlines*2/3):nlines
     ind <- sample(z, round( 1.2* ntraj))
 
@@ -105,6 +111,13 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
       #      statenames=c("S","I","R","H1","H2","Ic","Ih","time"),
       #      paramnames=parnames_td_sirh) -> flu_sirh
 
+      state_names = c('S', 'I', 'R', 'H1', 'H2', 'Ih')
+      nstates = length(state_names)
+
+      accum = c('Ih')
+      iaccum = which(state_names %in% accum)
+      naccum = length(accum)
+
       icount=0
 
       for (ii in ind) {
@@ -130,25 +143,39 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
         #   simdat[icount,] <- model.pred$cases
 
         yinit = c(state0$S0, state0$I0, 0, 0, 0, 0)
-        parms = c(mypar, 'wl' = wl)
-        time0 = parms['time0']
-        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_sirh_dynamics, parms = parms)
-        results0 <- results0[,-1]
-        yinit0 <- as.numeric(results0[nrow(results0),])
 
-        if (nb == 2) {
-          results <- ode(y=yinit0, t = times, method='lsoda', func=td2_sirh_dynamics, parms = parms)
-        } else {
-          results <- ode(y=yinit0, t = times, method='lsoda', func=td3_sirh_dynamics, parms = parms)
-        }
-
-        model.pred = results[,-1] # remove the time column
-        colnames(model.pred) = c('S', 'I', 'R', 'H1', 'H2', 'Ih')
-
-        # generate simulation data with the parameters defined above
-
-        Ih = c(0, diff(model.pred[,'Ih']))
+        traj = array(0, c(ntimes, nstates))
+        out <- .Fortran('detsirh', nstates = as.integer(nstates), init = as.double(yinit), param = as.double(mypar),
+                        nparam = as.integer(nparam), nb = as.integer(nb), time = as.double(times), ntimes = as.integer(length(times)),
+                        t0 = as.double(t0), dt = as.double(dt),
+                        naccum = as.integer(naccum), iaccum = as.integer(iaccum),
+                        traj = as.double(traj), wl = as.double(wl))
+        #
+        traj = array(out$traj, c(ntimes, nstates))
+        colnames(traj) <- state_names
+        Ih = traj[,'Ih']
+        #
         cases <- rpois(ntimes, Ih * mypar[['rho']] + mypar[['baseline']])
+
+        # parms = c(mypar, 'wl' = wl)
+        # time0 = parms['time0']
+        # results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_sirh_dynamics, parms = parms)
+        # results0 <- results0[,-1]
+        # yinit0 <- as.numeric(results0[nrow(results0),])
+        #
+        # if (nb == 2) {
+        #   results <- ode(y=yinit0, t = times, method='lsoda', func=td2_sirh_dynamics, parms = parms)
+        # } else {
+        #   results <- ode(y=yinit0, t = times, method='lsoda', func=td3_sirh_dynamics, parms = parms)
+        # }
+        #
+        # model.pred = results[,-1] # remove the time column
+        # colnames(model.pred) = c('S', 'I', 'R', 'H1', 'H2', 'Ih')
+        #
+        # # generate simulation data with the parameters defined above
+        #
+        # Ih = c(0, diff(model.pred[,'Ih']))
+        # cases <- rpois(ntimes, Ih * mypar[['rho']] + mypar[['baseline']])
 
         icount = icount + 1
         simdat[icount,] <- cases
@@ -173,6 +200,12 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
       #      obsnames="cases",
       #      statenames=c("S","E","I","R","H1","H2","Ic","Ih", 'time'),
       #      paramnames=parnames_td_seirh) -> covid_seir
+      state_names = c('S', 'E', 'I', 'R', 'H1', 'H2', 'Ih')
+      nstates = length(state_names)
+
+      accum = c('Ih')
+      iaccum = which(state_names %in% accum)
+      naccum = length(accum)
 
       icount=0
 
@@ -196,23 +229,36 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
         yinit = c(state0$S0, state0$I0, state0$E0, 0, 0, 0, 0)
 
-        parms = c(mypar, 'wl' = wl)
-        time0 = parms['time0']
-        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_seirh_dynamics, parms = parms)
-        results0 <- results0[,-1]
-        yinit0 <- as.numeric(results0[nrow(results0),])
-        if (nb == 2) {
-          results <- ode(y=yinit0, t = times, method='lsoda', func=td2_seirh_dynamics, parms = parms)
-        } else {
-          results <- ode(y=yinit0, t = times, method='lsoda', func=td3_seirh_dynamics, parms = parms)
-        }
+        traj = array(0, c(ntimes, nstates))
+        out <- .Fortran('detseirh', nstates = as.integer(nstates), init = as.double(yinit), param = as.double(mypar),
+                        nparam = as.integer(nparam), nb = as.integer(nb), time = as.double(times), ntimes = as.integer(length(times)),
+                        t0 = as.double(t0), dt = as.double(dt),
+                        naccum = as.integer(naccum), iaccum = as.integer(iaccum),
+                        traj = as.double(traj), wl = as.double(wl))
+        #
+        traj = array(out$traj, c(ntimes, nstates))
+        colnames(traj) <- state_names
+        Ih = traj[,'Ih']
+        #
+        cases <- rpois(ntimes, Ih * mypar[['rho']] + mypar[['baseline']])
 
-        model.pred = results[,-1] # remove the time column
-        colnames(model.pred) = c('S', 'E', 'I', 'R', 'H1', 'H2', 'Ih')
-
-        # generate simulation data with the parameters defined above
-
-        Ih = c(0, diff(model.pred[,'Ih']))
+        # parms = c(mypar, 'wl' = wl)
+        # time0 = parms['time0']
+        # results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_seirh_dynamics, parms = parms)
+        # results0 <- results0[,-1]
+        # yinit0 <- as.numeric(results0[nrow(results0),])
+        # if (nb == 2) {
+        #   results <- ode(y=yinit0, t = times, method='lsoda', func=td2_seirh_dynamics, parms = parms)
+        # } else {
+        #   results <- ode(y=yinit0, t = times, method='lsoda', func=td3_seirh_dynamics, parms = parms)
+        # }
+        #
+        # model.pred = results[,-1] # remove the time column
+        # colnames(model.pred) = c('S', 'E', 'I', 'R', 'H1', 'H2', 'Ih')
+        #
+        # # generate simulation data with the parameters defined above
+        #
+        # Ih = c(0, diff(model.pred[,'Ih']))
 
         cases <- rpois(ntimes, Ih * mypar[['rho']] + mypar[['baseline']])
 
@@ -515,6 +561,8 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
     nparamtot = dim(tab)[2] -1 # it includes the LLK hence the -1
 
+    nparam = nparamtot - 2*nb
+
     z <- round(nlines*2/3):nlines
 
     ind <- sample(z, round( 1.2* ntraj))
@@ -546,6 +594,11 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     dates = dates[keep_ind]
 
     obs_fit = mydata$data_fit$inc
+    #
+
+    t0 = 0
+
+    dt = 1./15.
 
     #print information to the User
     cat("\nCreating Forecast: ", nfrcst/cadence," ", print_lab, " Forward for ", reg_name, ' ', toupper(disease),'\n')
@@ -575,6 +628,13 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       #      statenames=c("S","I","R","H1","H2","Ic","Ih","time"),
       #      paramnames=parnames_td_sirh) -> flu_sirh
 
+      state_names = c('S', 'I', 'R', 'H1', 'H2', 'Ih')
+      nstates = length(state_names)
+
+      accum = c('Ih')
+      iaccum = which(state_names %in% accum)
+      naccum = length(accum)
+
       icount=0
 
       for (ii in ind) {
@@ -597,25 +657,40 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
         # if (model.pred$cases[which.max(obs)] > round(mypar['baseline']) *2){
 
         yinit = c(state0$S0, state0$I0, 0, 0, 0, 0)
-        parms = c(mypar, 'wl' =wl)
-        time0 = parms['time0']
-        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_sirh_dynamics, parms = parms)
-        results0 <- results0[,-1]
-        yinit0 <- as.numeric(results0[nrow(results0),])
-        if (nb == 2) {
-          results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td2_sirh_dynamics, parms = parms)
-        } else {
-          results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td3_sirh_dynamics, parms = parms)
-          # calling H2 Ih here
-        }
 
-        model.pred = results[,-1] # remove the time column
-        colnames(model.pred) = c('S', 'I', 'R', 'H1', 'H2', 'Ih')
-
-        # generate simulation data with the parameters defined above
-
-        Ih = c(0, diff(model.pred[,'Ih']))
+        traj = array(0, c(ntimes_frcst, nstates))
+        out <- .Fortran('detsirh', nstates = as.integer(nstates), init = as.double(yinit), param = as.double(mypar),
+                        nparam = as.integer(nparam), nb = as.integer(nb), time = as.double(times_frcst), ntimes = as.integer(ntimes_frcst),
+                        t0 = as.double(t0), dt = as.double(dt),
+                        naccum = as.integer(naccum), iaccum = as.integer(iaccum),
+                        traj = as.double(traj), wl = as.double(wl))
+        #
+        traj = array(out$traj, c(ntimes_frcst, nstates))
+        colnames(traj) <- state_names
+        Ih = traj[,'Ih']
+        #
         cases <- rpois(ntimes_frcst, Ih * mypar[['rho']] + mypar[['baseline']])
+
+
+        # parms = c(mypar, 'wl' =wl)
+        # time0 = parms['time0']
+        # results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_sirh_dynamics, parms = parms)
+        # results0 <- results0[,-1]
+        # yinit0 <- as.numeric(results0[nrow(results0),])
+        # if (nb == 2) {
+        #   results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td2_sirh_dynamics, parms = parms)
+        # } else {
+        #   results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td3_sirh_dynamics, parms = parms)
+        #   # calling H2 Ih here
+        # }
+        #
+        # model.pred = results[,-1] # remove the time column
+        # colnames(model.pred) = c('S', 'I', 'R', 'H1', 'H2', 'Ih')
+        #
+        # # generate simulation data with the parameters defined above
+        #
+        # Ih = c(0, diff(model.pred[,'Ih']))
+        # cases <- rpois(ntimes_frcst, Ih * mypar[['rho']] + mypar[['baseline']])
 
         if (cases[which.max(obs)] > round(mypar['baseline'])) {
           icount = icount + 1
@@ -641,6 +716,13 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       #      statenames=c("S","E","I","R","H1","H2","Ic","Ih", 'time'),
       #      paramnames=parnames_td_seirh) -> covid_seir
 
+      state_names = c('S', 'E', 'I', 'R', 'H1', 'H2', 'Ih')
+      nstates = length(state_names)
+
+      accum = c('Ih')
+      iaccum = which(state_names %in% accum)
+      naccum = length(accum)
+
       icount=0
 
       for (ii in ind) {
@@ -661,26 +743,40 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
         # model.pred <- simulate(covid_seir, format="data.frame", nsim = 1)
 
         yinit = c(state0$S0, state0$I0, state0$E0, 0, 0, 0, 0)
-        parms = c(mypar, 'wl' =wl)
-        time0 = parms['time0']
-        results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_seirh_dynamics, parms = parms)
-        results0 <- results0[,-1]
-        yinit0 <- as.numeric(results0[nrow(results0),])
-        if (nb == 2) {
-          results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td2_seirh_dynamics, parms = parms)
-        } else {
-          results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td3_seirh_dynamics, parms = parms)
-          # calling H2 Ih here
-        }
 
-        model.pred = results[,-1] # remove the time column
-        colnames(model.pred) = c('S', 'E', 'I', 'R', 'H1', 'H2', 'Ih')
-
-        # generate simulation data with the parameters defined above
-
-        Ih = c(0, diff(model.pred[,'Ih']))
-
+        traj = array(0, c(ntimes_frcst, nstates))
+        out <- .Fortran('detseirh', nstates = as.integer(nstates), init = as.double(yinit), param = as.double(mypar),
+                        nparam = as.integer(nparam), nb = as.integer(nb), time = as.double(times_frcst), ntimes = as.integer(ntimes_frcst),
+                        t0 = as.double(t0), dt = as.double(dt),
+                        naccum = as.integer(naccum), iaccum = as.integer(iaccum),
+                        traj = as.double(traj), wl = as.double(wl))
+        #
+        traj = array(out$traj, c(ntimes_frcst, nstates))
+        colnames(traj) <- state_names
+        Ih = traj[,'Ih']
+        #
         cases <- rpois(ntimes_frcst, Ih * mypar[['rho']] + mypar[['baseline']])
+
+        # parms = c(mypar, 'wl' =wl)
+        # time0 = parms['time0']
+        # results0 <- ode(y=yinit, t = seq(from=0,to=time0, length=max(round(time0),5)), method = 'lsoda', func=td_seirh_dynamics, parms = parms)
+        # results0 <- results0[,-1]
+        # yinit0 <- as.numeric(results0[nrow(results0),])
+        # if (nb == 2) {
+        #   results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td2_seirh_dynamics, parms = parms)
+        # } else {
+        #   results <- ode(y=yinit0, t = times_frcst, method='lsoda', func=td3_seirh_dynamics, parms = parms)
+        #   # calling H2 Ih here
+        # }
+        #
+        # model.pred = results[,-1] # remove the time column
+        # colnames(model.pred) = c('S', 'E', 'I', 'R', 'H1', 'H2', 'Ih')
+        #
+        # # generate simulation data with the parameters defined above
+        #
+        # Ih = c(0, diff(model.pred[,'Ih']))
+        #
+        # cases <- rpois(ntimes_frcst, Ih * mypar[['rho']] + mypar[['baseline']])
 
         if (max(cases) > mypar['baseline']){
           icount = icount + 1
@@ -695,6 +791,19 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     }
 
     simdat = simdat[1:icount,]
+
+    last_non_na_index <- max(which(!is.na(obs_fit)))
+    if (cadence == 7) {
+      obs_mean = obs_fit[last_non_na_index]
+      obs_model = mean(simdat[,last_non_na_index])
+    } else {
+      obs_mean = mean(obs_fit[(last_non_na_index-7+1):last_non_na_index])
+      obs_model = mean(simdat[,(last_non_na_index-7+1):last_non_na_index])
+    }
+
+    shift = obs_mean - obs_model
+
+    for (ii in 1:icount) simdat[ii, ] = pmax(simdat[ii, ] + shift,0)
 
     simdat_list[[ip]] = simdat
 
