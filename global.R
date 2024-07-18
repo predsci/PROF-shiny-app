@@ -9,7 +9,7 @@ pacman::p_load(required_packages, character.only = TRUE)
 
 # date of update
 
-date_updated = "February 16, 2024"
+date_updated = "July 15, 2024"
 
 # locations
 loc_abbv <- loc_pops$abbreviation

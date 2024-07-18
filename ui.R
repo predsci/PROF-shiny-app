@@ -17,7 +17,7 @@ ui <- navbarPage(
       column(2,""),
       column(4,
 
-             h4(paste0("Version 0.0.1000 | Released ",date_updated)),
+             h4(paste0("Version 1.0.0 | Released ",date_updated)),
              #h4("EXPIRES: April 10, 2020"),
              HTML("<h5>CONTACT: mbennun@predsci.com jturtle@predsci.com</h5>"),
              HTML("<h5> <a href='https://github.com/predsci/PROF/'>PROF GitHub </a> | <a href='https://predsci.github.io/PROF/'>PROF Github.io</a>  |  <a href='https://www.predsci.com/usa-flu-hosp/'>PSI Influenza Forecasting Page</a> "),
@@ -581,6 +581,10 @@ tabPanel("About",
                          in multiple ways, including random, ordered, and semi-ordered. If the statistical model is also chosen, each
                          pathogen is independently fitted with the model, and the combined burden is estimated."),
            p("For more on PROF see",tags$a(href="https://predsci.github.io/PROF/",'our web documentation')),
+           h3("Users interested in using PROF from the command line are encouraged to download the example scripts below:"),
+           downloadButton("downloadScriptExample", "Download Basic Example Script"),
+           downloadButton("downloadScriptMixed", "Download `Mixed Forecast` Script"),
+           downloadButton("downloadScriptWIS", "Download WIS Example Script"),
            h2('Acknowledgement'),
            p("The development of PROF is supported by CSTE throught the CDC cooporative agreement number NU38OT000297.
              PSI would also like to thank the modeling team at the CA Department of Public Health for their invaluable comments and suggestions.

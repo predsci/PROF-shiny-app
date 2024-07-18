@@ -808,5 +808,27 @@ server <- function(input, output, session) {
   })
 
 
-
+  # Handler for the first script
+  output$downloadScriptExample <- downloadHandler(
+    filename = function() { "example.R" },
+    content = function(file) {
+      file.copy("files/example.R", file)
+    }
+  )
+  
+  # Handler for the second script
+  output$downloadScriptExample <- downloadHandler(
+    filename = function() { "example_mixed_forecas.R" },
+    content = function(file) {
+      file.copy("files/example_mixed_forecas.R", file)
+    }
+  )
+  
+  # Handler for the third script
+  output$downloadScriptExample <- downloadHandler(
+    filename = function() { "example_wis.R" },
+    content = function(file) {
+      file.copy("files/example_wis.R", file)
+    }
+  )
 }
