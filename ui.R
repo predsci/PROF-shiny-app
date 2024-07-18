@@ -384,7 +384,7 @@ tabsetPanel(
     )
     )
 ),
-tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Statistical tabs under it.
+tabPanel("3. Forecast Incidence", # The Forecasting Tab has the Mechanistic and Statistical tabs under it.
          tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
