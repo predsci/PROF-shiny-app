@@ -581,9 +581,9 @@ tabPanel("About",
                          in multiple ways, including random, ordered, and semi-ordered. If the statistical model is also chosen, each
                          pathogen is independently fitted with the model, and the combined burden is estimated."),
            p("For more on PROF see",tags$a(href="https://predsci.github.io/PROF/",'our web documentation')),
-           h3("Users interested in using PROF from the command line are encouraged to download the example scripts below:"),
+           h3("Users interested in using PROF from the command line are encouraged to download the tutorial scripts below:"),
            downloadButton("downloadScriptExample", "Download Basic Example Script"),
-           downloadButton("downloadScriptMixed", "Download `Mixed Forecast` Script"),
+           downloadButton("downloadScriptEnsmbl", "Download `Ensemble Forecast` Script"),
            downloadButton("downloadScriptWIS", "Download WIS Example Script"),
            h2('Acknowledgement'),
            p("The development of PROF is supported by CSTE throught the CDC cooporative agreement number NU38OT000297.
