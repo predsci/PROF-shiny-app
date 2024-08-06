@@ -14,6 +14,8 @@ server <- function(input, output, session) {
 
   shared_wis  <- reactiveValues(data = NULL)
 
+  shared_wis_both  <- reactiveValues(data = NULL)
+
   download_trigger <- reactiveValues(num=0)
 
   shared_pop <- reactiveValues(data = NULL)
@@ -606,6 +608,7 @@ server <- function(input, output, session) {
 
     if (length(mech_forecast()) > 0) {
       shared_wis$data$wis_mech <- mech_forecast()$wis_df
+      shared_wis_both$data$wis_mech_both <- mech_forecast()$wis_df_both
     }
 
     output$plot5 <- renderPlotly({mech_forecast()$arrange_plot})
@@ -686,6 +689,7 @@ server <- function(input, output, session) {
 
     if (length(stat_forecast()) > 0) {
       shared_wis$data$wis_stat <- stat_forecast()$wis_df
+      shared_wis_both$data$wis_stat_both <- stat_forecast()$wis_df_both
     }
 
     output$plot6 <- renderPlotly({stat_forecast()$arrange_plot})
@@ -765,9 +769,25 @@ server <- function(input, output, session) {
       wis_output<- shiny_plot_wis(wis_data, state_abbv)
 
       wis_df <- wis_output$wis_df
-      # Render the plot
+
+      arrange_plot <- wis_output$arrange_plot
+
+      wis_both_names = names(shared_wis_both$data)
+
+      all_null_both <- all(sapply(wis_both_names, is.null))
+      if(!all_null_both) {
+        wis_both_data = shared_wis_both$data
+        wis_both_output<- shiny_plot_wis(wis_both_data, state_abbv)
+        arrange_both_plot <- wis_both_output$arrange_plot
+        pl_both <- wis_both_output$pl
+        pl <-wis_output$pl
+        arrange_plot <- subplot(pl[[1]], pl[[2]],pl_both[[1]], pl_both[[2]],
+                              nrows = 2, titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE, margin = c(0.02, 0.02, 0.1, 0.07))
+      }
+
       output$wis_plot <- renderPlotly({
-        wis_output$arrange_plot
+          #wis_output$arrange_plot
+          arrange_plot
       })
 
       wis_df$metric = rep('wis', nrow(wis_df))
@@ -808,27 +828,5 @@ server <- function(input, output, session) {
   })
 
 
-  # Handler for the first script
-  output$downloadScriptExample <- downloadHandler(
-    filename = function() { "example.R" },
-    content = function(file) {
-      file.copy("files/example.R", file)
-    }
-  )
 
-  # Handler for the second script
-  output$downloadScriptEnsmbl <- downloadHandler(
-    filename = function() { "example_ensemble_forecast.R" },
-    content = function(file) {
-      file.copy("files/example_ensemble_forecast.R", file)
-    }
-  )
-
-  # Handler for the third script
-  output$downloadScriptWIS <- downloadHandler(
-    filename = function() { "example_wis.R" },
-    content = function(file) {
-      file.copy("files/example_wis.R", file)
-    }
-  )
 }

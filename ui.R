@@ -17,7 +17,7 @@ ui <- navbarPage(
       column(2,""),
       column(4,
 
-             h4(paste0("Version 1.0.0 | Released ",date_updated)),
+             h4(paste0("Version 0.0.1000 | Released ",date_updated)),
              #h4("EXPIRES: April 10, 2020"),
              HTML("<h5>CONTACT: mbennun@predsci.com jturtle@predsci.com</h5>"),
              HTML("<h5> <a href='https://github.com/predsci/PROF/'>PROF GitHub </a> | <a href='https://predsci.github.io/PROF/'>PROF Github.io</a>  |  <a href='https://www.predsci.com/usa-flu-hosp/'>PSI Influenza Forecasting Page</a> "),
@@ -384,7 +384,7 @@ tabsetPanel(
     )
     )
 ),
-tabPanel("3. Forecast Incidence", # The Forecasting Tab has the Mechanistic and Statistical tabs under it.
+tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Statistical tabs under it.
          tabsetPanel(
     tabPanel("Mechanistic",
              fluidPage(
@@ -521,7 +521,7 @@ tabPanel("3. Forecast Incidence", # The Forecasting Tab has the Mechanistic and 
     tabPanel('Evaluate Forecast',
              fluidPage(
                h2("Evaluating Retrospective Forecasts"),
-               h4("We assess the accuracy of PROF’s probabilistic forecasts by employing the weighted interval score [1] as implemented in the scoringutils R package [2]. Smaller values of the WIS indicate forecasts that are more aligned with observations. The evaluation of the WIS uses daily data (and forecasts) and the same quantiles as mandated by the CDC FluSight Challenge. The weighted interval score can be evaluted only for retrospective forecasts."),
+               h4("We assess the accuracy of PROF’s probabilistic forecasts by employing the weighted interval score [1] as implemented in the scoringutils R package [2]. Smaller values of the WIS indicate forecasts that are more aligned with observations. The evaluation of the WIS uses the same cadence as the data and the same quantiles as mandated by the CDC FluSight Challenge. The weighted interval score can be evaluted only for retrospective forecasts."),
 
 
                hr(),
@@ -554,8 +554,7 @@ tabPanel("3. Forecast Incidence", # The Forecasting Tab has the Mechanistic and 
         ")
                ),
                br(),
-               h4("We evaluate the WIS score using all data and all forecasts. Each pathogen is displayed in a different panel and different colors
-                  are used to indicate different models, see legend."),
+               h4("We evaluate the WIS score using all available data and forecasts. Each pathogen is displayed in a separate panel, with different colors indicating the various models, as shown in the legend. If forecasts are available for both pathogens, we also evaluate the WIS score for the combined burden, considering both random and user-selected error correlations."),
                br(),
                p("1. Evaluating epidemics forecasts in interval format, Bracher J, Ray EL, Gneiting T and Reich NG, ", tags$a(href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008618","PLoS Comput Biol 17(2): e1008618")),
                p("2. R package", tags$a(href="https://cran.r-project.org/web/packages/scoringutils/index.html", "scoringutils"))
@@ -581,10 +580,6 @@ tabPanel("About",
                          in multiple ways, including random, ordered, and semi-ordered. If the statistical model is also chosen, each
                          pathogen is independently fitted with the model, and the combined burden is estimated."),
            p("For more on PROF see",tags$a(href="https://predsci.github.io/PROF/",'our web documentation')),
-           h3("Users interested in using PROF from the command line are encouraged to download the tutorial scripts below:"),
-           downloadButton("downloadScriptExample", "Download Basic Example Script"),
-           downloadButton("downloadScriptEnsmbl", "Download `Ensemble Forecast` Script"),
-           downloadButton("downloadScriptWIS", "Download WIS Example Script"),
            h2('Acknowledgement'),
            p("The development of PROF is supported by CSTE throught the CDC cooporative agreement number NU38OT000297.
              PSI would also like to thank the modeling team at the CA Department of Public Health for their invaluable comments and suggestions.
