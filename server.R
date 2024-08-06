@@ -775,14 +775,23 @@ server <- function(input, output, session) {
       wis_both_names = names(shared_wis_both$data)
 
       all_null_both <- all(sapply(wis_both_names, is.null))
+      
+      wis_df$metric = rep('wis', nrow(wis_df))
+      wis_df$loc_abbv = rep(state_abbv, nrow(wis_df))
+      
       if(!all_null_both) {
         wis_both_data = shared_wis_both$data
         wis_both_output<- shiny_plot_wis(wis_both_data, state_abbv)
+        wis_both_df <- wis_both_output$wis_df
         arrange_both_plot <- wis_both_output$arrange_plot
         pl_both <- wis_both_output$pl
         pl <-wis_output$pl
         arrange_plot <- subplot(pl[[1]], pl[[2]],pl_both[[1]], pl_both[[2]],
                               nrows = 2, titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE, margin = c(0.02, 0.02, 0.1, 0.07))
+
+        wis_both_df$metric = rep('wis', nrow(wis_both_df))
+        wis_both_df$loc_abbv = rep(state_abbv, nrow(wis_both_df))
+        wis_df <- rbind(wis_df, wis_both_df)
       }
 
       output$wis_plot <- renderPlotly({
@@ -790,8 +799,7 @@ server <- function(input, output, session) {
           arrange_plot
       })
 
-      wis_df$metric = rep('wis', nrow(wis_df))
-      wis_df$loc_abbv = rep(state_abbv, nrow(wis_df))
+
 
     } else {
 
