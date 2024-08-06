@@ -277,7 +277,7 @@ shiny_plot_fit <- function(prof_data, par_list, fit_list, ntraj =1000) {
 
     simdat_list[[disease]] = simdat
 
-     apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles
+    apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975), na.rm =TRUE) -> quantiles
 
     quantiles <- t(quantiles)
     quantiles <- as.data.frame(quantiles)
@@ -403,7 +403,7 @@ shiny_plot_stat_fit <- function(prof_data, diseases) {
 
     reported_fit = obs_fit
 
-    apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles
+    apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE) -> quantiles
 
     quantiles <- t(quantiles)
     quantiles <- as.data.frame(quantiles)
@@ -485,7 +485,9 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   npath = length(prof_data)
 
-  disease_list = names(prof_data)
+  diseases = names(prof_data)
+
+  disease_list = diseases
 
   pl = simdat_list = dates_frcst_list = total_list = list()
 
@@ -496,6 +498,10 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
   # loop on all diseases
 
   wis_df = list()
+
+  wis_df_both = list()
+
+  dates_score_list = list()
 
   for (ip in 1:npath) {
 
@@ -819,6 +825,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
       nscore = length(dates_frcst_only_in_obs)
       obs_score = obs[keep_ind_obs]
       dates_score = dates[keep_ind_obs]
+      dates_score_list[[disease]] = dates_score
 
       # find the subset from the model that we are going to score
       sim_score = simdat[, keep_ind_model]
@@ -848,7 +855,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
                                     date = as.Date(dates_frcst, format = '%Y-%m-%d'),
                                     reported = reported, reported_fit = reported_fit)
 
-    apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles
+    apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE) -> quantiles
 
     quantiles <- t(quantiles)
     quantiles <- as.data.frame(quantiles)
@@ -961,6 +968,23 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   obs_fit_both = combined_frcst$obs_fit_both
 
+  # check to see if we can score the combined burden
+  if (length(dates_score_list) > 1) {
+    dates1 = tibble(x=as.Date(dates_score_list[[diseases[1]]]))
+    dates2 = tibble(x=as.Date(dates_score_list[[diseases[2]]]))
+    dates_score_both = intersect(dates1, dates2)$x
+    keep_ind_obs_both = match(dates_fore, dates_score_both)
+    keep_ind_obs_both = na.omit(keep_ind_obs_both)
+    sim_score_ecor = combined_frcst_ecor$simdat_both[[1]][,keep_ind_obs_both]
+    sim_score_rand = combined_frcst_rand$simdat_both[[1]][,keep_ind_obs_both]
+    obs_score_both = obs_both[(length(obs_fit_both))+keep_ind_obs_both]
+    wis_arr_ecor = score_forecast(obs = obs_score_both, simdat = sim_score_ecor)
+    wis_arr_rand = score_forecast(obs = obs_score_both, simdat = sim_score_rand)
+
+    wis_df_both[[combined_names[1]]] = data.frame(date=dates_score_both, wis = wis_arr_ecor, disease = 'combined_ecor', model = 'mech')
+    wis_df_both[[combined_names[2]]] = data.frame(date=dates_score_both, wis = wis_arr_rand, disease = 'combined_rand', model = 'mech')
+  }
+
   # npad = length(dates_both) - length(obs_both)
   npad = length(dates_fore)
   if (npad > 0) {
@@ -1007,7 +1031,7 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
 
   for (ic in 1:length(combined_names)) {
 
-    apply(simdat_both[[ic]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
+    apply(simdat_both[[ic]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE) -> quantiles_both
 
     quantiles_both <- t(quantiles_both)
     quantiles_both <- as.data.frame(quantiles_both)
@@ -1071,11 +1095,17 @@ shiny_plot_forecast <- function(prof_data, par_list, fit_list, ntraj =1000, nfrc
     interactive_plot[[ip]] <- ggplotly(pl[[ip]])
   }
 
+  if (length(wis_df_both) !=0) {
+    long_df_both = bind_rows(wis_df_both)
+  } else {
+    long_df_both = NULL
+  }
+
   cat("\nMaking Plots\n\n")
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
                           nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
-  return(list(arrange_plot = arrange_plot, total_list = total_list, wis_df = long_df))
+  return(list(arrange_plot = arrange_plot, total_list = total_list, wis_df = long_df, wis_df_both = long_df_both))
 
 }
 
@@ -1097,6 +1127,10 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
   reported_list = reported_fit_list = list()
 
   wis_df = list()
+
+  wis_df_both = list()
+
+  dates_score_list = list()
 
   # loop on all diseases
   for (ip in 1:npath) {
@@ -1174,6 +1208,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
       nscore = length(dates_frcst_only_in_obs)
       obs_score = obs[keep_ind_obs]
       dates_score = dates[keep_ind_obs]
+      dates_score_list[[disease]] = dates_score
 
       # find the subset from the model that we are going to score
       sim_score = simdat[, keep_ind_model]
@@ -1203,7 +1238,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
                                     date = as.Date(dates_frcst, format = '%Y-%m-%d'),
                                     reported = reported, reported_fit = reported_fit)
 
-    apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles
+    apply(simdat,2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975), na.rm = TRUE) -> quantiles
 
     quantiles <- t(quantiles)
     quantiles <- as.data.frame(quantiles)
@@ -1290,7 +1325,6 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
                                                err_corr=0, nfrcst=nfrcst/cadence,
                                                method_name=method_name)
 
-
   combined_frcst = combined_frcst_ecor
   combined_frcst$simdat_both[[2]] = combined_frcst_rand$simdat_both[[1]]
 
@@ -1311,6 +1345,22 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
   obs_both    = combined_frcst$obs_both
 
   obs_fit_both = combined_frcst$obs_fit_both
+
+  # check to see if we can score the combined burden
+  if (length(dates_score_list) > 1) {
+    dates1 = tibble(x=as.Date(dates_score_list[[diseases[1]]]))
+    dates2 = tibble(x=as.Date(dates_score_list[[diseases[2]]]))
+    dates_score_both = intersect(dates1, dates2)$x
+    keep_ind_obs_both = match(dates_fore, dates_score_both)
+    keep_ind_obs_both = na.omit(keep_ind_obs_both)
+    sim_score_ecor = combined_frcst_ecor$simdat_both[[1]][,keep_ind_obs_both]
+    sim_score_rand = combined_frcst_rand$simdat_both[[1]][,keep_ind_obs_both]
+    obs_score_both = obs_both[(length(obs_fit_both))+keep_ind_obs_both]
+    wis_arr_ecor = score_forecast(obs = obs_score_both, simdat = sim_score_ecor)
+    wis_arr_rand = score_forecast(obs = obs_score_both, simdat = sim_score_rand)
+    wis_df_both[[combined_names[1]]] = data.frame(date=dates_score_both, wis = wis_arr_ecor, disease = 'combined_ecor', model = 'stat')
+    wis_df_both[[combined_names[2]]] = data.frame(date=dates_score_both, wis = wis_arr_rand, disease = 'combined_rand', model = 'stat')
+  }
 
   # npad = nfrcst/cadence - length(obs_both)
   npad = length(dates_fore)
@@ -1363,7 +1413,7 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
 
   for (ic in 1:length(combined_names)) {
 
-    apply(simdat_both[[ic]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975)) -> quantiles_both
+    apply(simdat_both[[ic]],2,quantile,probs=c(0.025,0.25,0.5,0.75,0.975), na.rm =TRUE) -> quantiles_both
 
     quantiles_both <- t(quantiles_both)
     quantiles_both <- as.data.frame(quantiles_both)
@@ -1450,10 +1500,15 @@ shiny_plot_stat_forecast <- function(prof_data, diseases, nfrcst, err_cor, metho
     interactive_plot[[ip]] <- ggplotly(pl[[ip]])
   }
 
+  if (length(wis_df_both) !=0) {
+    long_df_both = bind_rows(wis_df_both)
+  } else {
+    long_df_both = NULL
+  }
 
   arrange_plot <- subplot(interactive_plot[[1]], interactive_plot[[2]], interactive_plot[[3]], interactive_plot[[4]],
                             nrows = 2, titleX = TRUE, titleY = TRUE, shareX = FALSE, shareY = FALSE, margin = c(0.02, 0.02, 0.07, 0.07))
-  return(list(arrange_plot = arrange_plot, total_list = total_list, wis_df = long_df))
+  return(list(arrange_plot = arrange_plot, total_list = total_list, wis_df = long_df, wis_df_both = long_df_both))
 
 }
 
@@ -1481,7 +1536,7 @@ shiny_plot_wis <- function(wis_data, loc = NA) {
     title = paste0(toupper(loc), ' WIS SCORE ')
     pl[[jj]] <- ggplot(data, aes(x = date, y = wis, fill = model)) +
       geom_bar(stat = "identity", position = "dodge") +
-      annotate("text", x = data$date[2], y = max(data$wis)*0.9, label = toupper(mydisease), size = 5) +
+      annotate("text", x = data$date[4], y = max(data$wis)*0.9, label = toupper(mydisease), size = 3) +
       labs(title = title,
            x = "Date",
            y = "WIS Score",
@@ -1493,7 +1548,7 @@ shiny_plot_wis <- function(wis_data, loc = NA) {
     interactive_plot <- list()
     interactive_plot[[1]] <- ggplotly(pl[[1]])
     arrange_plot <- interactive_plot[[1]]
-    return(list(arrange_plot = arrange_plot, wis_df = wis_df))
+    return(list(arrange_plot = arrange_plot, wis_df = wis_df, pl = pl))
   }
 
   if (length(pl) == 2)
@@ -1501,7 +1556,7 @@ shiny_plot_wis <- function(wis_data, loc = NA) {
                             nrows = 2, titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE, margin = c(0.02, 0.02, 0.1, 0.07))
   # Render the plot
 
-  return(list(arrange_plot = arrange_plot, wis_df = wis_df))
+  return(list(arrange_plot = arrange_plot, wis_df = wis_df, pl = pl))
 }
 
 

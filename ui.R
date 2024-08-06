@@ -521,7 +521,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
     tabPanel('Evaluate Forecast',
              fluidPage(
                h2("Evaluating Retrospective Forecasts"),
-               h4("We assess the accuracy of PROF’s probabilistic forecasts by employing the weighted interval score [1] as implemented in the scoringutils R package [2]. Smaller values of the WIS indicate forecasts that are more aligned with observations. The evaluation of the WIS uses daily data (and forecasts) and the same quantiles as mandated by the CDC FluSight Challenge. The weighted interval score can be evaluted only for retrospective forecasts."),
+               h4("We assess the accuracy of PROF’s probabilistic forecasts by employing the weighted interval score [1] as implemented in the scoringutils R package [2]. Smaller values of the WIS indicate forecasts that are more aligned with observations. The evaluation of the WIS uses the same cadence as the data and the same quantiles as mandated by the CDC FluSight Challenge. The weighted interval score can be evaluted only for retrospective forecasts."),
 
 
                hr(),
@@ -554,8 +554,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
         ")
                ),
                br(),
-               h4("We evaluate the WIS score using all data and all forecasts. Each pathogen is displayed in a different panel and different colors
-                  are used to indicate different models, see legend."),
+               h4("We evaluate the WIS score using all available data and forecasts. Each pathogen is displayed in a separate panel, with different colors indicating the various models, as shown in the legend. If forecasts are available for both pathogens, we also evaluate the WIS score for the combined burden, considering both random and user-selected error correlations."),
                br(),
                p("1. Evaluating epidemics forecasts in interval format, Bracher J, Ray EL, Gneiting T and Reich NG, ", tags$a(href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008618","PLoS Comput Biol 17(2): e1008618")),
                p("2. R package", tags$a(href="https://cran.r-project.org/web/packages/scoringutils/index.html", "scoringutils"))
