@@ -76,7 +76,7 @@ ui <- navbarPage(
     tabPanel("1. Explore Incidence",
              h4('Model Daily Hospitlizatation data from HHS or upload your own hopitalization data'),
              tabsetPanel(
-               tabPanel("HHS Data",
+               tabPanel("NHSN Data",
              fluidPage(
                h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
                h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
