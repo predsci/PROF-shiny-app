@@ -74,11 +74,11 @@ ui <- navbarPage(
     #### Landing Page ####
 
     tabPanel("1. Explore Incidence",
-             h4('Model Daily Hospitlizatation data from HHS or upload your own hopitalization data'),
+             h4('Model Hospitlizatation data from NHSN or upload your own hopitalization data'),
              tabsetPanel(
                tabPanel("NHSN Data",
              fluidPage(
-               h2('Explore Daily COVID-19 and Influenza Hospitalization Data'),
+               h2('Explore COVID-19 and Influenza Hospitalization Data'),
                h4("The data file provided with your PROF-shiny application may need an update, check the message below and consider our suggestion
                for an update if needed. Use the Dropdown menus to select a location and a season. When you complete your selection, click the Plot button.
                 You can proceed to the Fitting tab only after plotting is completed. Explore the data by hovering over it.
@@ -554,7 +554,7 @@ tabPanel("3. Create Forecast", # The Forecasting Tab has the Mechanistic and Sta
         ")
                ),
                br(),
-               h4("We evaluate the WIS score using all available data and forecasts. Each pathogen is displayed in a separate panel, with different colors indicating the various models, as shown in the legend. If forecasts are available for both pathogens, we also evaluate the WIS score for the combined burden, considering both random and user-selected error correlations."),
+               h4("We evaluate the WIS using all available data and forecasts. Each pathogen is displayed in a separate panel, with different colors indicating the various models, as shown in the legend. If forecasts are available for both pathogens, we also evaluate the WIS for the combined burden, considering both random and user-selected error correlations."),
                br(),
                p("1. Evaluating epidemics forecasts in interval format, Bracher J, Ray EL, Gneiting T and Reich NG, ", tags$a(href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008618","PLoS Comput Biol 17(2): e1008618")),
                p("2. R package", tags$a(href="https://cran.r-project.org/web/packages/scoringutils/index.html", "scoringutils"))

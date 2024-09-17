@@ -1533,13 +1533,13 @@ shiny_plot_wis <- function(wis_data, loc = NA) {
   for (jj in 1:length(mydiseases)) {
     mydisease = mydiseases[jj]
     data = subset(wis_df, disease == mydisease)
-    title = paste0(toupper(loc), ' WIS SCORE ')
+    title = paste0(toupper(loc), ' WIS ')
     pl[[jj]] <- ggplot(data, aes(x = date, y = wis, fill = model)) +
       geom_bar(stat = "identity", position = "dodge") +
       annotate("text", x = data$date[4], y = max(data$wis)*0.9, label = toupper(mydisease), size = 3) +
       labs(title = title,
            x = "Date",
-           y = "WIS Score",
+           y = "WIS",
            fill = "Model")
 
   }
